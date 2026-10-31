@@ -53,6 +53,7 @@ def main():
         for statement in "\n".join(statements).split(";"):
             if statement.strip():
                 cursor.execute(statement)
+        ensure_document_storage_columns(cursor)
         connection.commit()
         cursor.close()
         connection.close()
@@ -65,6 +66,16 @@ def main():
             "and DB_SSL_CA in your environment. For hosted databases, create the database "
             f"in the provider console first. Details: {error}"
         ) from error
+
+
+def ensure_document_storage_columns(cursor):
+    """Add blob columns to an existing database without affecting its document metadata."""
+    cursor.execute("SHOW COLUMNS FROM documents")
+    columns = {row[0] for row in cursor.fetchall()}
+    if "original_data" not in columns:
+        cursor.execute("ALTER TABLE documents ADD COLUMN original_data LONGBLOB NULL AFTER pdf_size")
+    if "pdf_data" not in columns:
+        cursor.execute("ALTER TABLE documents ADD COLUMN pdf_data LONGBLOB NULL AFTER original_data")
 
 
 def migrate_legacy_documents(common, database):
