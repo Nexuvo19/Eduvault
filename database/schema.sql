@@ -25,6 +25,17 @@ CREATE TABLE IF NOT EXISTS documents (
   CONSTRAINT fk_documents_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS subjects (
+  id VARCHAR(32) NOT NULL PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  semester VARCHAR(20) NOT NULL,
+  branch VARCHAR(100) NOT NULL,
+  study_year VARCHAR(10) NOT NULL DEFAULT '1',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_subjects_branch_semester (branch, semester)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS resources (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -58,6 +69,18 @@ CREATE TABLE IF NOT EXISTS assignments (
   CONSTRAINT fk_assignments_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS practice_tests (
+  id VARCHAR(64) NOT NULL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  subject_id VARCHAR(32) NOT NULL,
+  topic VARCHAR(150) NOT NULL,
+  duration_seconds INT UNSIGNED NOT NULL,
+  difficulty VARCHAR(20) NOT NULL,
+  questions JSON NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_practice_tests_subject (subject_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS announcements (
   id VARCHAR(64) NOT NULL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -79,6 +102,15 @@ CREATE TABLE IF NOT EXISTS user_workspace_data (
   PRIMARY KEY (user_id, data_key),
   CONSTRAINT fk_workspace_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO subjects (id,name,code,semester,branch,study_year) VALUES
+('sub1','Programming in C','CS101','sem1','Computer Science','1'),
+('sub2','Mathematics-I','MA101','sem1','Computer Science','1'),
+('sub3','Physics','PH101','sem1','Electronics','1'),
+('sub4','Basic Electrical','EE101','sem1','Electronics','1'),
+('sub5','Communication Skills','HU101','sem1','Computer Science','1'),
+('sub6','Data Structures','CS201','sem2','Computer Science','1'),
+('sub7','Mathematics-II','MA201','sem2','Computer Science','1');
 
 -- Demo academic records. Remove or edit these rows after importing your own material.
 INSERT IGNORE INTO resources (id,title,subject_id,semester,category,format,resource_date,uploader,branch,study_year) VALUES
@@ -106,6 +138,11 @@ INSERT IGNORE INTO assignments (id,title,subject_id,description,assigned_date,du
 ('4','Communication Skills presentation','sub5','Prepare a 5-minute presentation on a technical topic of your choice.','2026-10-18','2026-11-10','Pending','medium'),
 ('5','Ohm''s Law numerical worksheet','sub4','Solve the 10 numericals provided in the reference material.','2026-10-20','2026-11-12','Pending','low'),
 ('6','Linked List implementation','sub6','Implement singly and doubly linked lists with insertion and deletion.','2026-10-22','2026-11-15','Pending','medium');
+
+INSERT IGNORE INTO practice_tests (id,title,subject_id,topic,duration_seconds,difficulty,questions) VALUES
+('1','C Programming Basics','sub1','C Fundamentals',300,'easy','[{"q":"Which header file is required for printf()?","opts":["<stdlib.h>","<stdio.h>","<string.h>","<conio.h>"],"ans":1,"topic":"Headers"},{"q":"What is the size of int in a typical 32-bit system?","opts":["2 bytes","4 bytes","8 bytes","1 byte"],"ans":1,"topic":"Data Types"},{"q":"Which operator is used for address of a variable?","opts":["*","&","->","."],"ans":1,"topic":"Pointers"},{"q":"Which loop executes at least once?","opts":["for","while","do-while","if"],"ans":2,"topic":"Loops"},{"q":"What does %d format specifier print?","opts":["float","string","integer","char"],"ans":2,"topic":"I/O"}]'),
+('2','Mathematics-I: Calculus','sub2','Differential Calculus',360,'medium','[{"q":"Derivative of sin(x) is?","opts":["cos(x)","-cos(x)","-sin(x)","tan(x)"],"ans":0,"topic":"Trigonometric"},{"q":"d/dx(x^n) equals?","opts":["nx^(n-1)","x^(n-1)","n*x^n","n!"],"ans":0,"topic":"Power Rule"},{"q":"Limit of (sin x)/x as x approaches 0 is?","opts":["0","1","infinity","undefined"],"ans":1,"topic":"Limits"},{"q":"Derivative of e^x is?","opts":["x*e^x","e^x","1","x"],"ans":1,"topic":"Exponential"},{"q":"d/dx(ln x) equals?","opts":["1/x","x","ln x","e^x"],"ans":0,"topic":"Logarithmic"}]'),
+('3','Data Structures Fundamentals','sub6','Arrays & Lists',300,'medium','[{"q":"Time complexity of array access by index?","opts":["O(n)","O(1)","O(log n)","O(n^2)"],"ans":1,"topic":"Arrays"},{"q":"A linked list node contains?","opts":["data only","pointer only","data and pointer","none"],"ans":2,"topic":"Linked Lists"},{"q":"Stack follows which principle?","opts":["FIFO","LIFO","Random","Priority"],"ans":1,"topic":"Stacks"},{"q":"Queue follows which principle?","opts":["FIFO","LIFO","Random","Priority"],"ans":0,"topic":"Queues"},{"q":"Insertion at head of singly linked list is?","opts":["O(n)","O(1)","O(log n)","O(n^2)"],"ans":1,"topic":"Linked Lists"}]');
 
 INSERT IGNORE INTO announcements (id,title,department,announcement_date,priority,description) VALUES
 ('1','Mid-Semester Examinations Schedule Released','Examination Cell','2026-10-28','Important','The mid-semester examinations will commence from November 18. Please check the detailed timetable on the notice board.'),

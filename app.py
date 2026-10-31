@@ -8,7 +8,8 @@ import secrets
 import shutil
 import subprocess
 import tempfile
-import uuid, io
+import uuid
+from io import BytesIO
 from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
@@ -27,7 +28,8 @@ INSTANCE_DIR = ROOT / "instance"
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(INSTANCE_DIR / "uploads"))).expanduser()
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_REQUEST_BYTES = MAX_UPLOAD_BYTES + 1024 * 1024
-MAX_CONVERTED_BYTES, MAX_DOCUMENT_STORAGE_BYTES = 40 * 1024 * 1024, 48 * 1024 * 1024
+MAX_CONVERTED_BYTES = 40 * 1024 * 1024
+MAX_DOCUMENT_STORAGE_BYTES = 48 * 1024 * 1024
 CONVERSION_TIMEOUT_SECONDS = 60
 ALLOWED_EXTENSIONS = {
     ".bmp", ".csv", ".doc", ".docx", ".gif", ".htm", ".html",
@@ -137,6 +139,37 @@ def fetch_resources(cursor):
                 "fileContentType": row["content_type"]} if row["file_id"] else {}),
         })
     return items
+
+
+def fetch_subjects(cursor):
+    cursor.execute(
+        """SELECT id, name, code, semester, branch, study_year
+           FROM subjects ORDER BY branch, semester, name"""
+    )
+    return [{
+        "id": row["id"], "name": row["name"], "code": row["code"],
+        "sem": row["semester"], "branch": row["branch"], "year": row["study_year"],
+    } for row in cursor.fetchall()]
+
+
+def fetch_tests(cursor):
+    import json
+    cursor.execute(
+        """SELECT id, title, subject_id, topic, duration_seconds, difficulty, questions
+           FROM practice_tests ORDER BY title, id"""
+    )
+    tests = []
+    for row in cursor.fetchall():
+        questions = row["questions"]
+        if isinstance(questions, str):
+            questions = json.loads(questions)
+        tests.append({
+            "id": row["id"], "title": row["title"], "subject": row["subject_id"],
+            "topic": row["topic"], "duration": row["duration_seconds"],
+            "difficulty": row["difficulty"], "questions": questions,
+            "qcount": len(questions),
+        })
+    return tests
 
 
 def fetch_assignments(cursor):
@@ -298,7 +331,9 @@ def bootstrap():
         result = {
             "user": {"id": user["id"], "identifier": user["identifier"],
                      "fullName": user["full_name"], "role": user["role"]},
+            "subjects": fetch_subjects(cursor),
             "resources": fetch_resources(cursor),
+            "tests": fetch_tests(cursor),
             "assignments": fetch_assignments(cursor),
             "announcements": fetch_announcements(cursor),
             "userData": fetch_user_data(cursor, user["id"]),
@@ -312,7 +347,7 @@ def bootstrap():
 @app.put("/api/admin/<collection>")
 @faculty_required
 def replace_collection(collection):
-    if collection not in {"resources", "assignments", "announcements"}:
+    if collection not in {"subjects", "resources", "tests", "assignments", "announcements"}:
         return json_error("Unknown academic collection.", 404)
     items = request.get_json(silent=True)
     if not isinstance(items, list) or len(items) > 5000:
@@ -321,10 +356,118 @@ def replace_collection(collection):
     try:
         cursor = connection.cursor()
         identifiers = []
-        if collection == "resources":
+        cursor.execute("SELECT id,semester,branch,study_year FROM subjects")
+        subject_metadata = {
+            row[0]: {"sem": row[1], "branch": row[2], "year": row[3]}
+            for row in cursor.fetchall()
+        }
+        if collection == "subjects":
+            for item in items:
+                if not isinstance(item, dict):
+                    raise ValueError("Each subject must be an object.")
+                subject_id = str(item.get("id", "")).strip()
+                name = str(item.get("name", "")).strip()
+                code = str(item.get("code", "")).strip()
+                semester = str(item.get("sem", "")).strip()
+                branch = str(item.get("branch", "")).strip()
+                year = str(item.get("year", "")).strip()
+                if not all((subject_id, name, code, semester, branch, year)):
+                    raise ValueError("Each subject needs an ID, name, code, semester, branch and year.")
+                if (len(subject_id) > 32 or len(name) > 150 or len(code) > 40
+                        or len(semester) > 20 or len(branch) > 100 or len(year) > 10):
+                    raise ValueError("A subject field exceeds the maximum length.")
+                if subject_id in identifiers:
+                    raise ValueError("Subject IDs must be unique.")
+                identifiers.append(subject_id)
+                cursor.execute(
+                    """INSERT INTO subjects (id,name,code,semester,branch,study_year)
+                       VALUES (%s,%s,%s,%s,%s,%s)
+                       ON DUPLICATE KEY UPDATE name=VALUES(name),code=VALUES(code),semester=VALUES(semester),
+                       branch=VALUES(branch),study_year=VALUES(study_year)""",
+                    (subject_id, name, code, semester, branch, year),
+                )
+            if identifiers:
+                placeholders = ",".join(["%s"] * len(identifiers))
+                params = tuple(identifiers)
+                cursor.execute(
+                    f"""SELECT subject_id FROM resources WHERE subject_id NOT IN ({placeholders})
+                        UNION SELECT subject_id FROM assignments WHERE subject_id NOT IN ({placeholders})
+                        UNION SELECT subject_id FROM practice_tests WHERE subject_id NOT IN ({placeholders}) LIMIT 1""",
+                    params + params + params,
+                )
+            else:
+                cursor.execute(
+                    """SELECT subject_id FROM resources UNION
+                       SELECT subject_id FROM assignments UNION
+                       SELECT subject_id FROM practice_tests LIMIT 1"""
+                )
+            if cursor.fetchone():
+                raise ValueError("A subject used by a resource or assignment cannot be deleted.")
+            if identifiers:
+                placeholders = ",".join(["%s"] * len(identifiers))
+                cursor.execute(f"DELETE FROM subjects WHERE id NOT IN ({placeholders})", tuple(identifiers))
+            else:
+                cursor.execute("DELETE FROM subjects")
+        elif collection == "tests":
+            for item in items:
+                if not isinstance(item, dict):
+                    raise ValueError("Each practice test must be an object.")
+                title = str(item.get("title", "")).strip()
+                subject_id = str(item.get("subject", ""))
+                topic = str(item.get("topic", "")).strip()
+                questions = item.get("questions")
+                try:
+                    duration = int(item.get("duration", 0))
+                except (TypeError, ValueError):
+                    raise ValueError("Test duration must be a whole number of seconds.")
+                difficulty = str(item.get("difficulty", "")).strip().lower()
+                if not title or not topic or subject_id not in subject_metadata:
+                    raise ValueError("Each test needs a title, topic and existing subject.")
+                if len(title) > 255 or len(topic) > 150:
+                    raise ValueError("A practice test field exceeds the maximum length.")
+                if duration < 30 or duration > 7200:
+                    raise ValueError("Test duration must be between 30 seconds and 2 hours.")
+                if difficulty not in {"easy", "medium", "hard"}:
+                    raise ValueError("Test difficulty must be easy, medium or hard.")
+                if not isinstance(questions, list) or not 1 <= len(questions) <= 100:
+                    raise ValueError("A test must contain between 1 and 100 questions.")
+                for question in questions:
+                    if not isinstance(question, dict):
+                        raise ValueError("Every test question must be an object.")
+                    options = question.get("opts")
+                    answer = question.get("ans")
+                    if (not str(question.get("q", "")).strip()
+                            or not isinstance(options, list) or not 2 <= len(options) <= 10
+                            or any(not isinstance(option, str) or not option.strip() for option in options)
+                            or not isinstance(answer, int) or isinstance(answer, bool)
+                            or not 0 <= answer < len(options)
+                            or not str(question.get("topic", "")).strip()):
+                        raise ValueError("Each question needs text, 2–10 options, a valid answer index and a topic.")
+                test_id = str(item.get("id", "")).strip() or uuid.uuid4().hex
+                if len(test_id) > 64:
+                    raise ValueError("A practice test ID exceeds the maximum length.")
+                if test_id in identifiers:
+                    raise ValueError("Practice test IDs must be unique.")
+                identifiers.append(test_id)
+                cursor.execute(
+                    """INSERT INTO practice_tests (id,title,subject_id,topic,duration_seconds,difficulty,questions)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s)
+                       ON DUPLICATE KEY UPDATE title=VALUES(title),subject_id=VALUES(subject_id),topic=VALUES(topic),
+                       duration_seconds=VALUES(duration_seconds),difficulty=VALUES(difficulty),questions=VALUES(questions)""",
+                    (test_id, title, subject_id, topic, duration, difficulty, json_dumps(questions)),
+                )
+            if identifiers:
+                placeholders = ",".join(["%s"] * len(identifiers))
+                cursor.execute(f"DELETE FROM practice_tests WHERE id NOT IN ({placeholders})", tuple(identifiers))
+            else:
+                cursor.execute("DELETE FROM practice_tests")
+        elif collection == "resources":
             for item in items:
                 if not isinstance(item, dict) or not str(item.get("title", "")).strip():
                     raise ValueError("Each resource must have a title.")
+                subject_id = str(item.get("subject", ""))
+                if subject_id not in subject_metadata:
+                    raise ValueError("Each resource must use an existing subject.")
                 item_id = str(item.get("id", "")).strip() or uuid.uuid4().hex
                 identifiers.append(item_id)
                 cursor.execute(
@@ -333,10 +476,10 @@ def replace_collection(collection):
                        ON DUPLICATE KEY UPDATE title=VALUES(title),subject_id=VALUES(subject_id),semester=VALUES(semester),
                        category=VALUES(category),format=VALUES(format),resource_date=VALUES(resource_date),uploader=VALUES(uploader),
                        branch=VALUES(branch),study_year=VALUES(study_year),file_id=VALUES(file_id)""",
-                    (item_id, str(item["title"]).strip(), item.get("subject", ""), item.get("sem", "sem1"),
+                    (item_id, str(item["title"]).strip(), subject_id, subject_metadata[subject_id]["sem"],
                      item.get("category", "Notes"), item.get("format", "PDF"), item.get("date") or date.today(),
-                     item.get("uploader", "Academic Resources Team"), item.get("branch", "Computer Science"),
-                     str(item.get("year", "1")), item.get("fileId")),
+                     item.get("uploader", "Academic Resources Team"), subject_metadata[subject_id]["branch"],
+                     subject_metadata[subject_id]["year"], item.get("fileId")),
                 )
             if identifiers:
                 placeholders = ",".join(["%s"] * len(identifiers))
@@ -347,6 +490,9 @@ def replace_collection(collection):
             for item in items:
                 if not isinstance(item, dict) or not str(item.get("title", "")).strip():
                     raise ValueError("Each assignment must have a title.")
+                subject_id = str(item.get("subject", ""))
+                if subject_id not in subject_metadata:
+                    raise ValueError("Each assignment must use an existing subject.")
                 item_id = str(item.get("id", "")).strip() or uuid.uuid4().hex
                 identifiers.append(item_id)
                 cursor.execute(
@@ -354,7 +500,7 @@ def replace_collection(collection):
                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                        ON DUPLICATE KEY UPDATE title=VALUES(title),subject_id=VALUES(subject_id),description=VALUES(description),
                        assigned_date=VALUES(assigned_date),due_date=VALUES(due_date),status=VALUES(status),priority=VALUES(priority)""",
-                    (item_id, str(item["title"]).strip(), item.get("subject", ""), item.get("desc", ""),
+                    (item_id, str(item["title"]).strip(), subject_id, item.get("desc", ""),
                      item.get("assigned") or date.today(), item.get("due") or date.today(), item.get("status", "Pending"),
                      item.get("priority", "medium"), session["user_id"]),
                 )
@@ -557,7 +703,7 @@ def get_document_pdf(identifier):
         return json_error("Document not found.", 404)
     download_name = f"{Path(document['original_name']).stem}.pdf"
     if document["file_data"] is not None:
-        return send_file(io.BytesIO(document["file_data"]), mimetype="application/pdf",
+        return send_file(BytesIO(document["file_data"]), mimetype="application/pdf",
                          as_attachment=True, download_name=download_name)
     legacy_file = UPLOAD_DIR / identifier / "document.pdf"
     if not legacy_file.is_file():
@@ -578,7 +724,7 @@ def get_document_original(identifier):
     extension = Path(document["original_name"]).suffix.lower()
     as_attachment = not document["content_type"].startswith("image/")
     if document["file_data"] is not None:
-        return send_file(io.BytesIO(document["file_data"]), mimetype=document["content_type"],
+        return send_file(BytesIO(document["file_data"]), mimetype=document["content_type"],
                          as_attachment=as_attachment, download_name=document["original_name"])
     legacy_file = UPLOAD_DIR / identifier / f"original{extension}"
     if not legacy_file.is_file():

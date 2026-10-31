@@ -27,6 +27,15 @@
     if(!response.ok)throw new Error(result.error||"The file could not be uploaded.");
     return result;
   }
+  function renderFacultyTests(){
+    const body=$("#facultyTestBody");
+    body.innerHTML="";
+    tests.forEach(test=>{
+      const row=el("tr");
+      row.innerHTML='<td>'+esc(test.title)+'</td><td>'+esc(subjectName(test.subject))+'</td><td>'+test.questions.length+'</td><td><div class="table-actions"><button class="icon-btn" data-test-edit="'+esc(test.id)+'" aria-label="Edit '+esc(test.title)+'">Edit</button><button class="icon-btn" data-test-delete="'+esc(test.id)+'" aria-label="Delete '+esc(test.title)+'">Delete</button></div></td>';
+      body.appendChild(row);
+    });
+  }
   async function apiDeleteDocument(id){
     let response;
     try{response=await fetch("/api/documents/"+encodeURIComponent(id),{method:"DELETE"});}
@@ -36,6 +45,23 @@
     try{result=await response.json();}
     catch(error){console.error("The Flask file service returned an invalid response.",error);throw new Error("The file service returned an unreadable response.");}
     throw new Error(result.error||"The attached file could not be removed.");
+  }
+  async function saveResources(updatedResources){
+    const response=await fetch("/api/admin/resources",{
+      method:"PUT",credentials:"same-origin",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(updatedResources)
+    });
+    let result={};
+    try{result=await response.json();}catch(error){
+      console.error("The resource service returned an invalid response.",error);
+      throw new Error("The resource service returned an unreadable response.");
+    }
+    if(!response.ok)throw new Error(result.error||"The database could not save these resources.");
+    resources=updatedResources;
+    serverStoreData.resources=updatedResources;
+    try{localStorage.setItem("eduvault_resources",JSON.stringify(updatedResources));}
+    catch(error){console.warn("EduVault could not update the browser cache.",error);}
   }
   function bindActivation(element,callback){
     element.setAttribute("role","button");
@@ -62,9 +88,9 @@
     return;
   }
   const session={role:bootstrap.user.role,identifier:bootstrap.user.identifier,fullName:bootstrap.user.fullName};
-  const serverStoreData={...bootstrap.userData,resources:bootstrap.resources,assignments:bootstrap.assignments,announcements:bootstrap.announcements};
+  const serverStoreData={...bootstrap.userData,resources:bootstrap.resources,tests:bootstrap.tests,assignments:bootstrap.assignments,announcements:bootstrap.announcements};
   const pendingWrites=new Map();
-  const remoteCollections=new Set(["resources","assignments","announcements"]);
+  const remoteCollections=new Set(["resources","tests","assignments","announcements"]);
   const Store = {
     get(key,fallback){
       return Object.prototype.hasOwnProperty.call(serverStoreData,key)?serverStoreData[key]:fallback;
@@ -99,70 +125,12 @@
   };
 
   /* ---------------- Workspace Data ---------------- */
-  const branches = ["Computer Science","Electronics","Mechanical","Civil","Information Science"];
-  const subjects = [
-    {id:"sub1",name:"Programming in C",code:"CS101",sem:"sem1"},
-    {id:"sub2",name:"Mathematics-I",code:"MA101",sem:"sem1"},
-    {id:"sub3",name:"Physics",code:"PH101",sem:"sem1"},
-    {id:"sub4",name:"Basic Electrical",code:"EE101",sem:"sem1"},
-    {id:"sub5",name:"Communication Skills",code:"HU101",sem:"sem1"},
-    {id:"sub6",name:"Data Structures",code:"CS201",sem:"sem2"},
-    {id:"sub7",name:"Mathematics-II",code:"MA201",sem:"sem2"}
-  ];
+  let subjects = bootstrap.subjects;
   const categories = ["Notes","Previous Papers","Model Papers","Laboratory Programs","Assignments","Reference Materials"];
 
-  let resources = Store.get("resources", [
-    {id:1,title:"Introduction to C Programming — Unit 1 Notes",subject:"sub1",sem:"sem1",category:"Notes",format:"PDF",date:"2026-08-12",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:2,title:"Arrays and Pointers — Complete Notes",subject:"sub1",sem:"sem1",category:"Notes",format:"PDF",date:"2026-09-02",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:3,title:"C Programming — Model Question Paper Set 1",subject:"sub1",sem:"sem1",category:"Model Papers",format:"DOCX",date:"2026-09-15",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:4,title:"C Programming — Previous Year Paper 2023",subject:"sub1",sem:"sem1",category:"Previous Papers",format:"PDF",date:"2026-01-10",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:5,title:"Lab 01: Hello World & Variable Scope",subject:"sub1",sem:"sem1",category:"Laboratory Programs",format:"LAB",date:"2026-08-20",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:6,title:"Lab 02: Functions and Recursion",subject:"sub1",sem:"sem1",category:"Laboratory Programs",format:"LAB",date:"2026-08-27",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:7,title:"Lab 03: Arrays and Strings",subject:"sub1",sem:"sem1",category:"Laboratory Programs",format:"LAB",date:"2026-09-03",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:8,title:"Differential Calculus — Notes",subject:"sub2",sem:"sem1",category:"Notes",format:"PDF",date:"2026-08-14",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:9,title:"Mathematics-I Model Paper",subject:"sub2",sem:"sem1",category:"Model Papers",format:"DOCX",date:"2026-09-18",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:10,title:"Mathematics-I Previous Paper 2022",subject:"sub2",sem:"sem1",category:"Previous Papers",format:"PDF",date:"2026-01-08",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:11,title:"Optics & Wave Optics — Reference Material",subject:"sub3",sem:"sem1",category:"Reference Materials",format:"PDF",date:"2026-08-22",uploader:"Academic Resources Team",branch:"Electronics",year:"1"},
-    {id:12,title:"Physics Lab 01: Oscilloscope Basics",subject:"sub3",sem:"sem1",category:"Laboratory Programs",format:"LAB",date:"2026-08-25",uploader:"Academic Resources Team",branch:"Electronics",year:"1"},
-    {id:13,title:"Ohm's Law & Kirchhoff's Laws — Notes",subject:"sub4",sem:"sem1",category:"Notes",format:"PDF",date:"2026-08-30",uploader:"Academic Resources Team",branch:"Electronics",year:"1"},
-    {id:14,title:"Effective Communication — Reference Guide",subject:"sub5",sem:"sem1",category:"Reference Materials",format:"PPTX",date:"2026-09-05",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:15,title:"Data Structures — Arrays & Linked Lists",subject:"sub6",sem:"sem2",category:"Notes",format:"PDF",date:"2026-10-02",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"},
-    {id:16,title:"Stacks & Queues — Lab Program",subject:"sub6",sem:"sem2",category:"Laboratory Programs",format:"LAB",date:"2026-10-12",uploader:"Academic Resources Team",branch:"Computer Science",year:"1"}
-  ]);
-
-  let assignments = Store.get("assignments", [
-    {id:1,title:"Write a C program to implement a calculator",subject:"sub1",desc:"Create a menu-driven calculator supporting addition, subtraction, multiplication and division using functions.",assigned:"2026-10-15",due:"2026-11-05",status:"Pending",priority:"high"},
-    {id:2,title:"Solve Differential Calculus problem set",subject:"sub2",desc:"Complete problems 1–12 from Chapter 3 on limits and derivatives.",assigned:"2026-10-18",due:"2026-11-02",status:"Pending",priority:"high"},
-    {id:3,title:"Lab report: Oscilloscope measurements",subject:"sub3",desc:"Document observations from Lab 01 with circuit diagrams and readings.",assigned:"2026-10-20",due:"2026-11-08",status:"Submitted",priority:"medium"},
-    {id:4,title:"Communication Skills presentation",subject:"sub5",desc:"Prepare a 5-minute presentation on a technical topic of your choice.",assigned:"2026-10-18",due:"2026-11-10",status:"Completed",priority:"medium"},
-    {id:5,title:"Ohm's Law numerical worksheet",subject:"sub4",desc:"Solve the 10 numericals provided in the reference material.",assigned:"2026-10-20",due:"2026-11-12",status:"Pending",priority:"low"},
-    {id:6,title:"Linked List implementation",subject:"sub6",desc:"Implement singly and doubly linked lists with insertion and deletion.",assigned:"2026-10-22",due:"2026-11-15",status:"Pending",priority:"medium"}
-  ]);
-
-  let announcements = Store.get("announcements", [
-    {id:1,title:"Mid-Semester Examinations Schedule Released",dept:"Examination Cell",date:"2026-10-28",priority:"Important",desc:"The mid-semester examinations will commence from November 18. Please check the detailed timetable on the notice board.",read:false},
-    {id:2,title:"C Programming Lab rescheduled",dept:"Computer Science Department",date:"2026-10-26",priority:"Normal",desc:"The Friday lab session is moved to Saturday 10 AM due to a faculty workshop.",read:false},
-    {id:3,title:"Library extended hours during exam weeks",dept:"Library Services",date:"2026-10-24",priority:"Normal",desc:"The library will remain open until 9 PM from November 1 to November 20.",read:true},
-    {id:4,title:"Industry guest lecture on Data Structures",dept:"Placement Cell",date:"2026-10-22",priority:"Important",desc:"A guest lecture on real-world data structures usage is scheduled for this month.",read:false},
-    {id:5,title:"Assignment submission portal maintenance",dept:"IT Services",date:"2026-10-20",priority:"Normal",desc:"The submission portal will be unavailable on Sunday 2–4 AM for scheduled maintenance.",read:true}
-  ]);
-
-  const notifications = [
-    {id:1,icon:"info",text:"New resource added: Arrays and Pointers Notes",time:"2h ago",annId:2},
-    {id:2,icon:"warn",text:"Assignment due in 2 days: Differential Calculus",time:"5h ago"},
-    {id:3,icon:"ok",text:"Your practice test score improved by 5%",time:"1d ago"},
-    {id:4,icon:"info",text:"Mid-semester schedule released",time:"1d ago",annId:1},
-    {id:5,icon:"info",text:"Guest lecture on Data Structures announced",time:"2d ago",annId:4}
-  ];
-
-  const activity = [
-    {type:"view",text:"Viewed C Programming — Unit 1 Notes",time:"2025-10-28 14:20",color:"var(--indigo-400)"},
-    {type:"download",text:"Downloaded Mathematics-I Model Paper",time:"2025-10-28 11:05",color:"var(--success)"},
-    {type:"complete",text:"Completed Communication Skills presentation",time:"2025-10-27 16:40",color:"var(--violet-500)"},
-    {type:"view",text:"Opened Lab 02: Functions and Recursion",time:"2025-10-27 09:15",color:"var(--indigo-400)"},
-    {type:"test",text:"Scored 80% in C Programming Practice Test",time:"2025-10-26 18:00",color:"var(--success)"}
-  ];
-
+  let resources = Store.get("resources", []);
+  let assignments = Store.get("assignments", []);
+  let announcements = Store.get("announcements", []);
   const quickAccess = [
     {label:"Notes",icon:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/><path d="M13 3v5h5"/></svg>',color:"var(--indigo-400)",nav:"resources"},
     {label:"Previous Papers",icon:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14 3v6h6"/></svg>',color:"#e2574b",nav:"papers"},
@@ -171,40 +139,8 @@
     {label:"Assignments",icon:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5h6M5 2h14v20l-7-4-7 4V2z"/></svg>',color:"var(--warning)",nav:"assignments"}
   ];
 
-  const continueLearning = [
-    {title:"C Programming — Unit 2 Notes",sub:"Programming in C",pct:65},
-    {title:"Differential Calculus",sub:"Mathematics-I",pct:40},
-    {title:"Lab 02: Functions",sub:"Programming in C",pct:80},
-    {title:"Ohm's Law Notes",sub:"Basic Electrical",pct:25}
-  ];
-
-  /* ---- Quiz data ---- */
-  const tests = [
-    {id:1,title:"C Programming Basics",subject:"Programming in C",topic:"C Fundamentals",qcount:5,duration:300,difficulty:"easy",
-      questions:[
-        {q:"Which header file is required for printf()?",opts:["<stdlib.h>","<stdio.h>","<string.h>","<conio.h>"],ans:1,topic:"Headers"},
-        {q:"What is the size of int in a typical 32-bit system?",opts:["2 bytes","4 bytes","8 bytes","1 byte"],ans:1,topic:"Data Types"},
-        {q:"Which operator is used for address of a variable?",opts:["*","&","->","."],ans:1,topic:"Pointers"},
-        {q:"Which loop executes at least once?",opts:["for","while","do-while","if"],ans:2,topic:"Loops"},
-        {q:"What does %d format specifier print?",opts:["float","string","integer","char"],ans:2,topic:"I/O"}
-      ]},
-    {id:2,title:"Mathematics-I: Calculus",subject:"Mathematics-I",topic:"Differential Calculus",qcount:5,duration:360,difficulty:"medium",
-      questions:[
-        {q:"Derivative of sin(x) is?",opts:["cos(x)","-cos(x)","-sin(x)","tan(x)"],ans:0,topic:"Trigonometric"},
-        {q:"d/dx(x^n) equals?",opts:["nx^(n-1)","x^(n-1)","n*x^n","n!"],ans:0,topic:"Power Rule"},
-        {q:"Limit of (sin x)/x as x→0 is?",opts:["0","1","∞","undefined"],ans:1,topic:"Limits"},
-        {q:"Derivative of e^x is?",opts:["x*e^x","e^x","1","x"],ans:1,topic:"Exponential"},
-        {q:"d/dx(ln x) equals?",opts:["1/x","x","ln x","e^x"],ans:0,topic:"Logarithmic"}
-      ]},
-    {id:3,title:"Data Structures Fundamentals",subject:"Data Structures",topic:"Arrays & Lists",qcount:5,duration:300,difficulty:"medium",
-      questions:[
-        {q:"Time complexity of array access by index?",opts:["O(n)","O(1)","O(log n)","O(n^2)"],ans:1,topic:"Arrays"},
-        {q:"A linked list node contains?",opts:["data only","pointer only","data and pointer","none"],ans:2,topic:"Linked Lists"},
-        {q:"Stack follows which principle?",opts:["FIFO","LIFO","Random","Priority"],ans:1,topic:"Stacks"},
-        {q:"Queue follows which principle?",opts:["FIFO","LIFO","Random","Priority"],ans:0,topic:"Queues"},
-        {q:"Insertion at head of singly linked list is?",opts:["O(n)","O(1)","O(log n)","O(n^2)"],ans:1,topic:"Linked Lists"}
-      ]}
-  ];
+  /* ---- Database-backed practice tests ---- */
+  let tests = Store.get("tests", []);
 
   /* ---- Study assistant responses ---- */
   const aiResponses = [
@@ -342,9 +278,11 @@
 
     const cl=$("#continueList");
     cl.innerHTML="";
-    continueLearning.forEach(c=>{
+    const savedResources=resources.filter(resource=>state.bookmarks.some(id=>String(id)===String(resource.id))).slice(0,4);
+    if(!savedResources.length)cl.innerHTML='<p class="asg-empty">Bookmark a resource to keep it here.</p>';
+    savedResources.forEach(resource=>{
       const item=el("div",{class:"continue-item",role:"button",tabindex:"0"});
-      item.innerHTML='<span class="continue-thumb">'+esc(c.title.charAt(0))+'</span><div class="continue-meta"><p>'+esc(c.title)+'</p><p class="muted">'+esc(c.sub)+'</p><div class="progress-mini"><span style="width:'+c.pct+'%"></span></div></div><span class="continue-pct">'+c.pct+'%</span>';
+      item.innerHTML='<span class="continue-thumb">'+esc(resource.title.charAt(0))+'</span><div class="continue-meta"><p>'+esc(resource.title)+'</p><p class="muted">'+esc(subjectName(resource.subject))+'</p></div>';
       bindActivation(item,()=>navigate("resources"));
       cl.appendChild(item);
     });
@@ -396,12 +334,7 @@
     });
 
     const act=$("#recentActivity");
-    act.innerHTML="";
-    activity.forEach(a=>{
-      const item=el("div",{class:"activity-item"});
-      item.innerHTML='<span class="activity-dot" style="background:'+a.color+'"></span><div class="activity-meta"><p>'+esc(a.text)+'</p><time>'+esc(a.time)+'</time></div>';
-      act.appendChild(item);
-    });
+    act.innerHTML='<p class="asg-empty">Your recent activity will appear here.</p>';
   }
 
   /* ---------------- Resources ---------------- */
@@ -411,7 +344,7 @@
     return '<div class="res-top">'+(r.fileId&&r.fileContentType&&r.fileContentType.startsWith("image/")?'<img class="resource-preview-img" src="'+esc(documentOriginalUrl(r.fileId))+'" alt="Preview of '+esc(r.fileName||r.title)+'" />':'')+'<div class="res-icon fmt-'+r.format+'">'+esc(r.format)+'</div><div><p class="res-title">'+esc(r.title)+'</p><p class="res-sub">'+esc(subjectName(r.subject))+'</p></div></div>'+
       '<div class="res-meta"><span>'+esc(r.category)+'</span><span>Sem '+r.sem.replace("sem","")+'</span><span>'+esc(r.format)+'</span><span>'+fmtDate(r.date)+'</span></div>'+
       '<div class="res-actions"><button class="icon-btn" data-view="'+r.id+'" aria-label="View"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-      '<button class="icon-btn" data-dl="'+r.id+'" aria-label="Download"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>'+
+      '<button class="icon-btn" data-dl="'+esc(r.id)+'" aria-label="'+(r.fileId?"Download":"No file attached")+'" '+(r.fileId?"":"disabled")+'><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>'+
       '<button class="icon-btn bookmark-btn '+(state.bookmarks.includes(r.id)?"active":"")+'" data-bm="'+r.id+'" aria-label="Bookmark"><svg viewBox="0 0 24 24" width="18" height="18" fill="'+(state.bookmarks.includes(r.id)?"currentColor":"none")+'" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button></div>';
   }
 
@@ -475,11 +408,85 @@
   }
 
   function populateFilters(){
-    const fBranch=$("#fBranch");branches.forEach(b=>{const o=el("option",{value:b});o.textContent=b;fBranch.appendChild(o);});
-    const fYear=$("#fYear");["1","2","3","4"].forEach(y=>{const o=el("option",{value:y});o.textContent="Year "+y;fYear.appendChild(o);});
-    const fSem=$("#fSem");[{v:"sem1",t:"Semester 1"},{v:"sem2",t:"Semester 2"}].forEach(s=>{const o=el("option",{value:s.v});o.textContent=s.t;fSem.appendChild(o);});
-    const fSub=$("#fSubject");subjects.forEach(s=>{const o=el("option",{value:s.id});o.textContent=s.name;fSub.appendChild(o);});
-    const fCat=$("#fCategory");categories.forEach(c=>{const o=el("option",{value:c});o.textContent=c;fCat.appendChild(o);});
+    const selected={branch:$("#fBranch").value,year:$("#fYear").value,sem:$("#fSem").value,subject:$("#fSubject").value,category:$("#fCategory").value,topSemester:$("#semesterSelect").value};
+    const unique=(items)=>[...new Set(items.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));
+    const branches=unique(subjects.map(subject=>subject.branch).concat(resources.map(resource=>resource.branch)));
+    const years=unique(subjects.map(subject=>subject.year).concat(resources.map(resource=>resource.year)));
+    const semesters=unique(subjects.map(subject=>subject.sem).concat(resources.map(resource=>resource.sem)));
+    const categoryValues=unique(categories.concat(resources.map(resource=>resource.category)));
+    function fill(select,values,label){
+      select.replaceChildren(el("option",{value:""},label));
+      values.forEach(value=>{
+        const option=el("option",{value});
+        option.textContent=label==="All semesters"?"Semester "+String(value).replace(/^sem/i,""):value;
+        select.appendChild(option);
+      });
+    }
+    fill($("#fBranch"),branches,"All branches");
+    fill($("#fYear"),years.map(String),"All years");
+    fill($("#fSem"),semesters,"All semesters");
+    fill($("#semesterSelect"),semesters,"All semesters");
+    fill($("#fSubject"),subjects.map(subject=>subject.id),"All subjects");
+    subjects.forEach(subject=>{
+      const option=Array.from($("#fSubject").options).find(item=>item.value===subject.id);
+      if(option)option.textContent=subject.name;
+    });
+    fill($("#fCategory"),categoryValues,"All categories");
+    for(const [key,selector] of [["branch","#fBranch"],["year","#fYear"],["sem","#fSem"],["subject","#fSubject"],["category","#fCategory"],["topSemester","#semesterSelect"]]){
+      if(Array.from($(selector).options).some(option=>option.value===selected[key]))$(selector).value=selected[key];
+    }
+  }
+
+  function populateSubjectSelectors(){
+    [$("#addResSubject"),$("#addAssignmentSubject"),$("#testSubject")].forEach(select=>{
+      const selected=select.value;
+      select.replaceChildren();
+      subjects.forEach(subject=>{
+        const option=el("option",{value:subject.id});
+        option.textContent=subject.name+" · "+subject.code;
+        select.appendChild(option);
+      });
+      if(subjects.some(subject=>subject.id===selected))select.value=selected;
+    });
+  }
+
+  async function saveSubjects(updatedSubjects){
+    const response=await fetch("/api/admin/subjects",{
+      method:"PUT",credentials:"same-origin",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(updatedSubjects)
+    });
+    let result={};
+    try{result=await response.json();}catch(error){
+      console.error("The subject service returned an invalid response.",error);
+      throw new Error("The subject service returned an unreadable response.");
+    }
+    if(!response.ok)throw new Error(result.error||"The database could not save these subjects.");
+    subjects=updatedSubjects;
+    populateFilters();
+    populateSubjectSelectors();
+    renderFacultyResources();
+    renderAllResources();
+    renderPapers();
+    renderLabs();
+  }
+
+  async function saveTests(updatedTests){
+    const response=await fetch("/api/admin/tests",{
+      method:"PUT",credentials:"same-origin",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(updatedTests)
+    });
+    let result={};
+    try{result=await response.json();}catch(error){
+      console.error("The practice test service returned an invalid response.",error);
+      throw new Error("The practice test service returned an unreadable response.");
+    }
+    if(!response.ok)throw new Error(result.error||"The database could not save these practice tests.");
+    tests=updatedTests;
+    serverStoreData.tests=updatedTests;
+    renderTests();
+    renderFacultyTests();
   }
 
   ["#fBranch","#fYear","#fSem","#fSubject","#fCategory"].forEach(selector=>$(selector).addEventListener("change",renderAllResources));
@@ -518,36 +525,18 @@
       '<div style="display:flex;align-items:center;gap:12px"><span class="res-icon fmt-'+r.format+'" style="width:48px;height:48px">'+esc(r.format)+'</span><div><p style="font-size:16px;font-weight:600">'+esc(r.title)+'</p><p class="muted">'+esc(subjectName(r.subject))+'</p></div></div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:8px"><span class="res-meta" style="display:inline-block;font-size:12px;color:var(--ink-500);background:var(--gray-100);padding:4px 10px;border-radius:6px">'+esc(r.category)+'</span><span class="res-meta" style="display:inline-block;font-size:12px;color:var(--ink-500);background:var(--gray-100);padding:4px 10px;border-radius:6px">Semester '+r.sem.replace("sem","")+'</span><span class="res-meta" style="display:inline-block;font-size:12px;color:var(--ink-500);background:var(--gray-100);padding:4px 10px;border-radius:6px">'+esc(r.format)+'</span></div>'+
       '<p class="muted">Academic Resources Team · '+fmtDate(r.date)+'</p>'+filePreview+'</div>',
-      '<button class="btn ghost" data-close>Close</button><button class="btn primary" data-dl-modal>'+(r.fileId?"Download PDF":"Download details")+'</button>');
+      '<button class="btn ghost" data-close>Close</button><button class="btn primary" data-dl-modal '+(r.fileId?"":"disabled")+'>'+(r.fileId?"Download PDF":"No file attached")+'</button>');
     $("[data-close]",$("#modalFoot")).addEventListener("click",closeModal);
-    $("[data-dl-modal]",$("#modalFoot")).addEventListener("click",()=>{closeModal();downloadResource(r);});
+    if(r.fileId)$("[data-dl-modal]",$("#modalFoot")).addEventListener("click",()=>{closeModal();downloadResource(r);});
   }
 
   function downloadResource(r){
-    if(r.fileId){
-      const link=el("a",{href:documentPdfUrl(r.fileId),download:(r.fileName||r.title).replace(/\.[^.]+$/,"")+".pdf"});
-      document.body.appendChild(link);link.click();link.remove();
-      toast("Converted PDF downloaded","success",r.fileName||r.title);
-      return;
-    }
-    const details=[
-      r.title,
-      "Subject: "+subjectName(r.subject),
-      "Category: "+r.category,
-      "Semester: "+r.sem.replace("sem",""),
-      "Format listed: "+r.format,
-      "Added: "+fmtDate(r.date),
-      "Source: EduVault academic resources catalogue",
-      "",
-      "This file contains catalogue details only. No original course document is attached."
-    ].join("\n");
-    const url=URL.createObjectURL(new Blob([details],{type:"text/plain;charset=utf-8"}));
-    const link=el("a",{href:url,download:r.title.replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase()+"-details.txt"});
+    if(!r.fileId){toast("This catalogue entry has no attached course file.","warning");return;}
+    const link=el("a",{href:documentPdfUrl(r.fileId),download:(r.fileName||r.title).replace(/\.[^.]+$/,"")+".pdf"});
     document.body.appendChild(link);
     link.click();
     link.remove();
-    window.setTimeout(()=>URL.revokeObjectURL(url),1000);
-    toast("Resource details downloaded","success",r.title);
+    toast("Converted PDF downloaded","success",r.fileName||r.title);
   }
 
   function toggleBookmark(id,btn){
@@ -657,22 +646,26 @@
   function renderTests(){
     if(state.quiz.active)return;
     const list=$("#testList");list.innerHTML="";
+    if(!tests.length){
+      list.innerHTML='<div class="asg-empty"><p>No practice tests are available yet.</p></div>';
+      return;
+    }
     tests.forEach(t=>{
       const card=el("div",{class:"test-card"});
-      card.innerHTML='<div><h4>'+esc(t.title)+'</h4><p class="muted">'+esc(t.subject)+'</p></div><div class="test-meta"><span>'+t.qcount+' questions</span><span>'+Math.floor(t.duration/60)+' min</span><span class="diff-'+t.difficulty+'">'+esc(t.difficulty.charAt(0).toUpperCase()+t.difficulty.slice(1))+'</span></div><button class="btn primary" data-start="'+t.id+'">Start test</button>';
+      card.innerHTML='<div><h4>'+esc(t.title)+'</h4><p class="muted">'+esc(subjectName(t.subject))+'</p></div><div class="test-meta"><span>'+t.questions.length+' questions</span><span>'+Math.floor(t.duration/60)+' min</span><span class="diff-'+esc(t.difficulty)+'">'+esc(t.difficulty.charAt(0).toUpperCase()+t.difficulty.slice(1))+'</span></div><button class="btn primary" data-start="'+esc(t.id)+'">Start test</button>';
       list.appendChild(card);
     });
   }
   $("#testList").addEventListener("click",e=>{
     const b=e.target.closest("[data-start]");if(!b)return;
-    startTest(parseInt(b.dataset.start));
+    startTest(b.dataset.start);
   });
 
   function startTest(id){
-    const t=tests.find(x=>x.id===id);if(!t)return;
+    const t=tests.find(x=>String(x.id)===String(id));if(!t)return;
     state.quiz={active:true,test:t,answers:new Array(t.questions.length).fill(null),current:0,timer:null,remaining:t.duration,submitted:false};
     $("#testList").hidden=true;$("#quizResult").hidden=true;$("#quizPanel").hidden=false;
-    $("#quizTitle").textContent=t.title;$("#quizSub").textContent=t.subject+" · "+t.qcount+" questions";
+    $("#quizTitle").textContent=t.title;$("#quizSub").textContent=subjectName(t.subject)+" · "+t.questions.length+" questions";
     state.quiz.timer=setInterval(tick,1000);
     renderQuestion();
   }
@@ -763,7 +756,7 @@
     }));
     progressData.testHistory.unshift({
       name:test.title,
-      subject:test.subject,
+      subject:subjectName(test.subject),
       score,
       topics,
       date:new Date().toISOString().slice(0,10)
@@ -905,7 +898,14 @@
     const list=$("#notifList");list.innerHTML="";
     if(state.notifRead){$("#notifEmpty").hidden=false;list.hidden=true;return;}
     $("#notifEmpty").hidden=true;list.hidden=false;
-    notifications.forEach(n=>{
+    if(!announcements.length){
+      $("#notifEmpty").hidden=false;
+      list.hidden=true;
+      return;
+    }
+    announcements.slice(0,5).forEach(announcement=>{
+      const n={id:String(announcement.id),icon:announcement.priority==="Important"?"warn":"info",
+        text:announcement.title,time:fmtDate(announcement.date),annId:announcement.id};
       const li=el("li",{"data-notif":n.id});
       li.innerHTML='<div class="notif-ic '+n.icon+'"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></div><div class="notif-body"><p>'+esc(n.text)+'</p><time>'+esc(n.time)+'</time></div>';
       if(n.annId)bindActivation(li,()=>{closeNotifPanel();markAnnouncementRead(n.annId);navigate("announcements");});
@@ -953,8 +953,19 @@
       tr.innerHTML='<td>'+esc(r.title)+'</td><td>'+esc(subjectName(r.subject))+'</td><td>'+esc(r.category)+'</td><td>'+esc(r.format)+'</td><td>'+fmtDate(r.date)+'</td><td>'+(r.fileId?'<a href="'+esc(documentPdfUrl(r.fileId))+'">PDF · '+esc(r.fileName||"Attached file")+'</a>':'—')+'</td><td><div class="table-actions"><button class="icon-btn" data-edit="'+esc(r.id)+'" aria-label="Edit '+esc(r.title)+'">Edit</button><button class="icon-btn" data-del="'+esc(r.id)+'" aria-label="Delete '+esc(r.title)+'">Delete</button></div></td>';
       body.appendChild(tr);
     });
+    renderFacultySubjects();
+    renderFacultyTests();
     renderFacultyAssignments();
     renderFacultyAnnouncements();
+  }
+  function renderFacultySubjects(){
+    const body=$("#facultySubjectBody");
+    body.innerHTML="";
+    subjects.forEach(subject=>{
+      const row=el("tr");
+      row.innerHTML='<td>'+esc(subject.name)+'</td><td>'+esc(subject.code)+'</td><td>'+esc(subject.branch)+'</td><td>'+esc(subject.sem)+'</td><td><div class="table-actions"><button class="icon-btn" data-subject-edit="'+esc(subject.id)+'" aria-label="Edit '+esc(subject.name)+'">Edit</button><button class="icon-btn" data-subject-delete="'+esc(subject.id)+'" aria-label="Delete '+esc(subject.name)+'">Delete</button></div></td>';
+      body.appendChild(row);
+    });
   }
   function renderFacultyAssignments(){
     const body=$("#facultyAssignmentBody");body.innerHTML="";
@@ -977,11 +988,15 @@
     if(del){
       const resource=resources.find(item=>String(item.id)===del.dataset.del);
       if(!resource)return;
-      confirmModal("Delete resource","Delete \""+resource.title+"\"? This cannot be undone.",()=>{
+      confirmModal("Delete resource","Delete \""+resource.title+"\"? This cannot be undone.",async()=>{
         const updatedResources=resources.filter(item=>String(item.id)!==del.dataset.del);
         const updatedBookmarks=state.bookmarks.filter(id=>String(id)!==del.dataset.del);
-        if(!Store.set("resources",updatedResources))return;
-        resources=updatedResources;
+        try{await saveResources(updatedResources);}
+        catch(error){
+          console.error("Could not delete the resource.",error);
+          toast(error.message,"error");
+          return;
+        }
         state.bookmarks=updatedBookmarks;
         Store.set("bookmarks",state.bookmarks);
         renderFacultyResources();renderAllResources();renderPapers();renderLabs();
@@ -1025,7 +1040,8 @@
           title,
           subject:subjectId,
           sem:subject?.sem||resource.sem,
-          branch:subjectId==="sub3"||subjectId==="sub4"?"Electronics":"Computer Science",
+          branch:subject?.branch||resource.branch,
+          year:subject?.year||resource.year,
           category:String(formData.get("category")),
           format:uploaded?"PDF":String(formData.get("format"))
         });
@@ -1036,7 +1052,10 @@
         }else if(removeAttachment){
           delete resource.fileId;delete resource.fileName;delete resource.fileContentType;
         }
-        if(!Store.set("resources",resources)){
+        try{await saveResources(resources);}
+        catch(error){
+          console.error("Could not update the resource.",error);
+          toast(error.message,"error");
           Object.assign(resource,previous);
           for(const key of ["fileId","fileName","fileContentType"])if(!(key in previous))delete resource[key];
           if(uploaded)apiDeleteDocument(uploaded.id).catch(error=>{console.error("Could not remove an unsaved file upload.",error);toast(error.message,"error");});
@@ -1091,6 +1110,86 @@
       toast("Assignment deleted","success");
     },"Delete",true);
   });
+  function resetTestForm(){
+    $("#testForm").reset();
+    delete $("#testForm").dataset.editId;
+    $("#testFormHeading").textContent="Add a practice test";
+    $("#saveTestBtn").textContent="Add test";
+    $("#cancelTestEdit").hidden=true;
+  }
+  $("#cancelTestEdit").addEventListener("click",resetTestForm);
+  $("#testForm").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    const values=new FormData(form);
+    let questions;
+    try{questions=JSON.parse(String(values.get("questions")||""));}
+    catch(error){
+      console.error("The practice test question JSON is invalid.",error);
+      toast("Questions must be valid JSON.","error");
+      return;
+    }
+    const test={
+      id:form.dataset.editId||"test_"+uid(),
+      title:String(values.get("title")||"").trim(),
+      subject:String(values.get("subject")||""),
+      topic:String(values.get("topic")||"").trim(),
+      duration:Number(values.get("durationMinutes"))*60,
+      difficulty:String(values.get("difficulty")||"medium"),
+      questions
+    };
+    if(!test.title||!test.subject||!test.topic||!Array.isArray(questions)||!questions.length){
+      toast("Complete the test details and add at least one question.","error");
+      return;
+    }
+    const updated=tests.some(item=>String(item.id)===String(test.id))
+      ?tests.map(item=>String(item.id)===String(test.id)?test:item)
+      :[...tests,test];
+    const button=$("#saveTestBtn");
+    button.disabled=true;
+    try{
+      await saveTests(updated);
+      resetTestForm();
+      toast("Practice test saved","success");
+    }catch(error){
+      console.error("Could not save the practice test.",error);
+      toast(error.message,"error");
+    }finally{
+      button.disabled=false;
+    }
+  });
+  $("#facultyTestBody").addEventListener("click",event=>{
+    const edit=event.target.closest("[data-test-edit]");
+    const remove=event.target.closest("[data-test-delete]");
+    const id=edit?.dataset.testEdit||remove?.dataset.testDelete;
+    if(!id)return;
+    const test=tests.find(item=>String(item.id)===id);
+    if(!test)return;
+    if(edit){
+      const form=$("#testForm");
+      form.dataset.editId=test.id;
+      form.elements.title.value=test.title;
+      form.elements.subject.value=test.subject;
+      form.elements.topic.value=test.topic;
+      form.elements.durationMinutes.value=String(test.duration/60);
+      form.elements.difficulty.value=test.difficulty;
+      form.elements.questions.value=JSON.stringify(test.questions,null,2);
+      $("#testFormHeading").textContent="Edit practice test";
+      $("#saveTestBtn").textContent="Save test";
+      $("#cancelTestEdit").hidden=false;
+      form.scrollIntoView({behavior:"smooth",block:"center"});
+      return;
+    }
+    confirmModal("Delete practice test","Delete \""+test.title+"\"? This cannot be undone.",async()=>{
+      try{
+        await saveTests(tests.filter(item=>String(item.id)!==id));
+        toast("Practice test deleted","success");
+      }catch(error){
+        console.error("Could not delete the practice test.",error);
+        toast(error.message,"error");
+      }
+    },"Delete",true);
+  });
   $("#facultyAnnouncementBody").addEventListener("click",event=>{
     const editButton=event.target.closest("[data-ann-edit]");
     const deleteButton=event.target.closest("[data-ann-del]");
@@ -1130,15 +1229,77 @@
     },"Delete",true);
   });
   $("#reloadFacultyRes").addEventListener("click",()=>window.location.reload());
-  (function(){
-    [$("#addResSubject"),$("#addAssignmentSubject")].forEach(select=>{
-      subjects.forEach(subject=>{
-        const option=el("option",{value:subject.id});
-        option.textContent=subject.name;
-        select.appendChild(option);
-      });
-    });
-  })();
+  function resetSubjectForm(){
+    $("#subjectForm").reset();
+    delete $("#subjectForm").dataset.editId;
+    $("#subjectFormHeading").textContent="Add a subject";
+    $("#saveSubjectBtn").textContent="Add subject";
+    $("#cancelSubjectEdit").hidden=true;
+  }
+  $("#cancelSubjectEdit").addEventListener("click",resetSubjectForm);
+  $("#subjectForm").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    const values=new FormData(form);
+    const id=form.dataset.editId||"subject_"+uid();
+    const subject={
+      id,name:String(values.get("name")||"").trim(),code:String(values.get("code")||"").trim(),
+      branch:String(values.get("branch")||"").trim(),sem:String(values.get("sem")||"").trim(),
+      year:String(values.get("year")||"").trim()
+    };
+    if(!subject.name||!subject.code||!subject.branch||!subject.sem||!subject.year){
+      toast("Complete all subject fields.","error");
+      return;
+    }
+    const updated=subjects.some(item=>item.id===id)
+      ?subjects.map(item=>item.id===id?subject:item)
+      :[...subjects,subject];
+    const button=$("#saveSubjectBtn");
+    button.disabled=true;
+    try{
+      await saveSubjects(updated);
+      resetSubjectForm();
+      toast("Subject saved","success");
+    }catch(error){
+      console.error("Could not save the subject.",error);
+      toast(error.message,"error");
+    }finally{
+      button.disabled=false;
+    }
+  });
+  $("#facultySubjectBody").addEventListener("click",event=>{
+    const edit=event.target.closest("[data-subject-edit]");
+    const remove=event.target.closest("[data-subject-delete]");
+    const id=edit?.dataset.subjectEdit||remove?.dataset.subjectDelete;
+    if(!id)return;
+    const subject=subjects.find(item=>item.id===id);
+    if(!subject)return;
+    if(edit){
+      const form=$("#subjectForm");
+      form.dataset.editId=subject.id;
+      for(const field of ["name","code","branch","sem","year"])form.elements[field].value=subject[field];
+      $("#subjectFormHeading").textContent="Edit subject";
+      $("#saveSubjectBtn").textContent="Save subject";
+      $("#cancelSubjectEdit").hidden=false;
+      form.scrollIntoView({behavior:"smooth",block:"center"});
+      return;
+    }
+    if(resources.some(resource=>String(resource.subject)===id)
+      ||assignments.some(assignment=>String(assignment.subject)===id)
+      ||tests.some(test=>String(test.subject)===id)){
+      toast("This subject is used by a resource, assignment or practice test and cannot be deleted.","error");
+      return;
+    }
+    confirmModal("Delete subject","Delete \""+subject.name+"\"? This cannot be undone.",async()=>{
+      try{
+        await saveSubjects(subjects.filter(item=>item.id!==id));
+        toast("Subject deleted","success");
+      }catch(error){
+        console.error("Could not delete the subject.",error);
+        toast(error.message,"error");
+      }
+    },"Delete",true);
+  });
   $("#addAssignmentForm").addEventListener("submit",event=>{
     event.preventDefault();
     const formData=new FormData(event.currentTarget);
@@ -1163,6 +1324,7 @@
     if(!title){toast("Title is required","error");return;}
     const file=fd.get("file");
     const hasFile=file instanceof File&&file.name!=="";
+    if(!hasFile){toast("Attach a course file before adding this resource.","error");return;}
     const subject=subjects.find(item=>item.id===fd.get("subject"));
     const submitButton=form.querySelector('[type="submit"]');
     submitButton.disabled=true;
@@ -1178,20 +1340,15 @@
         format:uploaded?"PDF":fd.get("format"),
         date:new Date().toISOString().slice(0,10),
         uploader:"Academic Resources Team",
-        branch:subject?.id==="sub3"||subject?.id==="sub4"?"Electronics":"Computer Science",
-        year:"1"
+        branch:subject?.branch||"",
+        year:subject?.year||""
       };
       if(uploaded){
         resource.fileId=uploaded.id;
         resource.fileName=uploaded.name;
         resource.fileContentType=uploaded.contentType;
       }
-      resources.unshift(resource);
-      if(!Store.set("resources",resources)){
-        resources.shift();
-        if(uploaded)await apiDeleteDocument(uploaded.id);
-        return;
-      }
+      await saveResources([resource,...resources]);
       renderFacultyResources();renderAllResources();renderPapers();renderLabs();
       form.reset();
       toast("Resource added"+(uploaded?" and converted to PDF":""),"success");
@@ -1224,7 +1381,7 @@
     {q:"How do I find study resources?",a:"Go to Study Resources in the sidebar and use the filters for branch, year, semester, subject and category. You can also use the global search in the top bar."},
     {q:"Can I upload or download course documents?",a:"Faculty can attach supported documents or images to a resource. The local Flask service converts them to PDF; download the converted PDF from the resource card or faculty console."},
     {q:"How does the Study Assistant work?",a:"It uses built-in reference responses. It does not connect to an AI service or verify answers against your current syllabus."},
-    {q:"Where are changes and uploads saved?",a:"Resources, assignments and announcements are saved in the shared MySQL database. Your bookmarks, progress and preferences are saved to your own account. Uploaded originals and converted PDFs are stored on the Flask server."}
+    {q:"Where are changes and uploads saved?",a:"Subjects, resources, practice tests, assignments and announcements are saved in the shared MySQL database. Your bookmarks, assignment status, progress and preferences are saved to your own account. Uploaded originals and converted PDFs are stored in MySQL."}
   ];
   (function(){
     const list=$("#faqList");
@@ -1292,6 +1449,7 @@
     $(".user-email").textContent=accountLabel;
     $$(".avatar").forEach(avatar=>{avatar.textContent=accountInitials;});
     populateFilters();
+    populateSubjectSelectors();
     const semester=Store.get("semester","");
     $("#semesterSelect").value=semester;
     $("#fSem").value=semester;
