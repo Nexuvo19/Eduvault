@@ -211,7 +211,7 @@
           <div class="section-head">
             <div>
               <h2 id="resourcesHeading">Study Resources</h2>
-              <p class="muted">Browse notes, papers, labs and reference materials. Filter by branch, year, semester and subject.</p>
+              <p class="muted">Browse notes, papers, labs, open courses and publisher links. Filter by branch, year, semester and subject.</p>
             </div>
             <div class="view-toggle" role="group" aria-label="Layout">
               <button class="vt-btn active" data-layout="grid" aria-pressed="true" aria-label="Grid layout"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
@@ -424,9 +424,11 @@
               <form id="addResForm" class="form" novalidate>
                 <div class="form-row"><label>Title<input type="text" name="title" required /></label></div>
                 <div class="form-row"><label>Subject<select name="subject" id="addResSubject" required></select></label></div>
-                <div class="form-row"><label>Category<select name="category" required><option value="Notes">Notes</option><option value="Model Papers">Model Papers</option><option value="Reference Materials">Reference Materials</option><option value="Laboratory Programs">Laboratory Programs</option></select></label></div>
+                <div class="form-row"><label>Category<select name="category" required><option value="Notes">Notes</option><option value="Model Papers">Model Papers</option><option value="Reference Materials">Reference Materials</option><option value="Laboratory Programs">Laboratory Programs</option><option value="External Courses">External Courses</option></select></label></div>
                 <div class="form-row"><label>Format<select name="format" required><option value="PDF">PDF</option><option value="DOCX">DOCX</option><option value="PPTX">PPTX</option></select></label></div>
-                <div class="form-row"><label>Attach a document or image<input type="file" name="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.html,.htm,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff,.webp" required /><span class="muted">Required. PDFs, images, and supported Office or text files are converted to PDF. Maximum 25 MB.</span></label></div>
+                <div class="form-row"><label>Publisher/source name<input type="text" name="uploader" maxlength="150" placeholder="e.g. MIT OpenCourseWare" /></label></div>
+                <div class="form-row"><label>Publisher HTTPS link<input type="url" name="externalUrl" maxlength="1000" placeholder="https://…" /><span class="muted">Link to the original source. Its access and reuse terms apply.</span></label></div>
+                <div class="form-row"><label>Attach a document or image<input type="file" name="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.html,.htm,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff,.webp" /><span class="muted">Attach a file or provide a source link. Supported files are converted to PDF; maximum 25 MB.</span></label></div>
                 <div class="form-actions"><button type="submit" class="btn primary">Add resource</button></div>
               </form>
             </div>
