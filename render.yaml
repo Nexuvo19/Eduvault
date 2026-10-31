@@ -24,3 +24,5 @@ services:
         value: eduvault
       - key: DB_SSL_CA
         value: /etc/secrets/ca.pem
+      - key: GEMINI_API_KEY
+        sync: false
