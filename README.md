@@ -9,6 +9,7 @@ The project uses Flask for its backend and MySQL for persistent account and acad
 - Password-hashed student/faculty authentication and student self-registration.
 - Faculty accounts created only by an administrator.
 - The subject catalogue, shared resources, practice tests, assignments and announcements are stored in MySQL and managed from the faculty console.
+- The resource catalogue can link to original HTTPS publisher pages; links are curated references, not copies, and each publisher's access and reuse terms apply.
 - Per-user bookmarks, assignment status, read state, practice history, chat, support requests and preferences stored in MySQL.
 - Faculty document uploads converted to PDF by LibreOffice, with original and PDF bytes stored in MySQL.
 - An AI study assistant that can answer questions using readable uploaded course PDFs, plus faculty-only AI test drafts that must be reviewed before saving.
@@ -60,7 +61,7 @@ Do this from your laptop before deploying. This makes the schema and demo record
    python create_faculty.py
    ```
 
-   `init_db.py` creates the project tables and inserts the supplied demo catalogue and records. Demo resource rows are catalogue entries only; faculty must attach actual course files in the Faculty Console. Resource files uploaded by faculty are stored in MySQL and remain available after redeploys. `create_faculty.py` asks for the faculty ID, name and password. Students can register from the app.
+   `init_db.py` creates or migrates the project tables and inserts the supplied demo catalogue, including curated links to free engineering courses and open textbooks. Linked resources open on the publisher's site; access and reuse terms vary by source. Faculty can add either an HTTPS publisher link or an uploaded course file in the Faculty Console. Uploaded files are stored in MySQL and remain available after redeploys. `create_faculty.py` asks for the faculty ID, name and password. Students can register from the app.
 
 ### 3. Put the project on GitHub
 
