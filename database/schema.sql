@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS resources (
   branch VARCHAR(100) NOT NULL DEFAULT 'Computer Science',
   study_year VARCHAR(10) NOT NULL DEFAULT '1',
   file_id CHAR(32) NULL,
+  external_url VARCHAR(1000) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_resources_subject (subject_id),
   INDEX idx_resources_category (category),
@@ -110,7 +111,37 @@ INSERT IGNORE INTO subjects (id,name,code,semester,branch,study_year) VALUES
 ('sub4','Basic Electrical','EE101','sem1','Electronics','1'),
 ('sub5','Communication Skills','HU101','sem1','Computer Science','1'),
 ('sub6','Data Structures','CS201','sem2','Computer Science','1'),
-('sub7','Mathematics-II','MA201','sem2','Computer Science','1');
+('sub7','Mathematics-II','MA201','sem2','Computer Science','1'),
+('sub8','Mechanical Engineering Fundamentals','ME101','sem1','Mechanical Engineering','1'),
+('sub9','Civil Engineering Fundamentals','CE101','sem1','Civil Engineering','1'),
+('sub10','Chemical Engineering Fundamentals','CH101','sem1','Chemical Engineering','1'),
+('sub11','Engineering Physics','PH101','sem1','General Engineering','1'),
+('sub12','Aerospace Engineering Fundamentals','AE101','sem1','Aerospace Engineering','1');
+
+-- Curated publisher links for free engineering courses and open textbooks.
+-- These point to the original publishers; their individual access and reuse terms apply.
+INSERT IGNORE INTO resources (id,title,subject_id,semester,category,format,resource_date,uploader,branch,study_year,external_url) VALUES
+('oer-mit-algorithms','Introduction to Algorithms (MIT 6.006)','sub6','sem2','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Computer Science','1','https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/'),
+('oer-mit-ai','Artificial Intelligence (MIT 6.034)','sub6','sem2','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Computer Science','1','https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/'),
+('oer-nptel-c','Introduction to Programming in C','sub1','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kanpur','Computer Science','1','https://nptel.ac.in/courses/106104128'),
+('oer-mit-circuits','Circuits and Electronics (MIT 6.002)','sub4','sem1','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Electronics','1','https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/'),
+('oer-nptel-electrical','Fundamentals of Electrical Engineering','sub4','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kharagpur','Electronics','1','https://nptel.ac.in/courses/108105112'),
+('oer-nptel-analog','Analog Electronic Circuit','sub4','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Delhi','Electronics','1','https://nptel.ac.in/courses/108102112'),
+('oer-mit-mechanics','Mechanics and Materials I (MIT 2.001)','sub8','sem1','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Mechanical Engineering','1','https://ocw.mit.edu/courses/2-001-mechanics-materials-i-fall-2006/'),
+('oer-mit-manufacturing','Control of Manufacturing Processes (MIT 2.830J)','sub8','sem1','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Mechanical Engineering','1','https://ocw.mit.edu/courses/2-830j-control-of-manufacturing-processes-sma-6303-spring-2008/'),
+('oer-nptel-thermodynamics','Basic Thermodynamics','sub8','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kharagpur','Mechanical Engineering','1','https://nptel.ac.in/courses/112105123'),
+('oer-nptel-manufacturing','Manufacturing Processes II','sub8','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kharagpur','Mechanical Engineering','1','https://nptel.ac.in/courses/112105127'),
+('oer-mit-solid-mechanics','Solid Mechanics (MIT 1.050)','sub9','sem1','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Civil Engineering','1','https://ocw.mit.edu/courses/1-050-solid-mechanics-fall-2004/'),
+('oer-mit-environment','Transport Processes in the Environment (MIT 1.061)','sub9','sem1','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Civil Engineering','1','https://ocw.mit.edu/courses/1-061-transport-processes-in-the-environment-fall-2008/'),
+('oer-nptel-fluid','Fluid Mechanics','sub9','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Guwahati','Civil Engineering','1','https://nptel.ac.in/courses/105103095'),
+('oer-nptel-concrete','Design of Concrete Structures','sub9','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kharagpur','Civil Engineering','1','https://nptel.ac.in/courses/105105104'),
+('oer-mit-chemical-reactions','Chemical and Biological Reaction Engineering (MIT 10.37)','sub10','sem1','External Courses','LINK',CURRENT_DATE,'MIT OpenCourseWare','Chemical Engineering','1','https://ocw.mit.edu/courses/10-37-chemical-and-biological-reaction-engineering-spring-2007/'),
+('oer-nptel-chemical-thermo','Chemical Engineering Thermodynamics','sub10','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kanpur','Chemical Engineering','1','https://nptel.ac.in/courses/103104151'),
+('oer-nptel-reaction','Principles of Chemical Reaction Engineering','sub10','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kharagpur','Chemical Engineering','1','https://nptel.ac.in/courses/103105003'),
+('oer-nptel-aerospace-flight','Introduction to Aerospace Engineering - Flight','sub12','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Bombay','Aerospace Engineering','1','https://nptel.ac.in/courses/101101079'),
+('oer-nptel-aircraft-structures','Aircraft Structures - I','sub12','sem1','External Courses','LINK',CURRENT_DATE,'NPTEL / IIT Kharagpur','Aerospace Engineering','1','https://nptel.ac.in/courses/101105084'),
+('oer-openstax-physics','University Physics, Volume 1','sub11','sem1','Reference Materials','LINK',CURRENT_DATE,'OpenStax / Rice University','General Engineering','1','https://openstax.org/books/university-physics-volume-1/pages/preface'),
+('oer-openstax-chemistry','Chemistry 2e','sub10','sem1','Reference Materials','LINK',CURRENT_DATE,'OpenStax / Rice University','Chemical Engineering','1','https://openstax.org/books/chemistry-2e/pages/preface');
 
 -- Demo academic records. Remove or edit these rows after importing your own material.
 INSERT IGNORE INTO resources (id,title,subject_id,semester,category,format,resource_date,uploader,branch,study_year) VALUES
