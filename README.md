@@ -11,6 +11,7 @@ The project uses Flask for its backend and MySQL for persistent account and acad
 - The subject catalogue, shared resources, practice tests, assignments and announcements are stored in MySQL and managed from the faculty console.
 - Per-user bookmarks, assignment status, read state, practice history, chat, support requests and preferences stored in MySQL.
 - Faculty document uploads converted to PDF by LibreOffice, with original and PDF bytes stored in MySQL.
+- An AI study assistant that can answer questions using readable uploaded course PDFs, plus faculty-only AI test drafts that must be reviewed before saving.
 - PWA manifest, install icons and service worker. The app shell can be cached; database/API actions still need internet access.
 
 ## A. Publish EduVault so everyone can open it
@@ -88,6 +89,10 @@ Copy the public Render HTTPS URL and send it to anyone. On Android:
 4. EduVault will appear on the phone like an app icon and open in its own app-style window.
 
 On desktop Chrome/Edge, use the install icon in the address bar or the browser menu. Users do not need your laptop to be switched on after the app is deployed.
+
+### Optional AI study assistant (Google Gemini)
+
+To enable the assistant and faculty test-draft generator, add `GEMINI_API_KEY` as a secret environment variable in the Render web service. Never add the key to frontend files, GitHub, or chat. The service uses the Gemini `gemini-2.5-flash` model by default; `GEMINI_MODEL` can optionally override it. AI requests are authenticated and rate-limited. The user's question and text from up to three readable uploaded course files are sent to Google Gemini; selecting a subject narrows which files are included. Faculty must review an AI-generated test and explicitly save it; the assistant cannot directly publish or edit academic records. Answers are not guaranteed accurate. Scanned/image-only files may not provide readable text. Gemini usage may incur provider charges and is subject to Google AI service terms and quotas.
 
 ## B. Storage limits and backups
 
