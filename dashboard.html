@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f6f8fc" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <meta name="description" content="EduVault - A Smart Academic Platform for students and faculty." />
+  <title>EduVault — Your Academic World, Organized</title>
+  <link rel="stylesheet" href="STYLE.CSS" />
+  <link rel="stylesheet" href="TYPOGRAPHY.CSS" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e2a4a'/%3E%3Cpath d='M8 11l8-4 8 4-8 4-8-4zm0 0v10l8 4 8-4V11' stroke='%237c9cff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <meta property="og:image" content="https://bolt.new/static/og_default.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
+</head>
+<body>
+  <!-- Skip link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- App shell -->
+  <div class="app" id="app">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+      <div class="sidebar-header">
+        <a href="#" class="brand" data-nav="overview" aria-label="EduVault home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="34" height="34"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M8 11l8-4 8 4-8 4-8-4zm0 0v10l8 4 8-4V11" stroke="#7c9cff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="brand-text">EduVault</span>
+        </a>
+        <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Sections">
+        <p class="nav-label student-only">Academic</p>
+        <ul class="nav-list student-only">
+          <li><button class="nav-item active" data-nav="overview"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg><span>Overview</span></button></li>
+          <li><button class="nav-item" data-nav="resources"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/><path d="M13 3v5h5"/></svg><span>Study Resources</span></button></li>
+          <li><button class="nav-item" data-nav="papers"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14 3v6h6M8 13h8M8 17h8"/></svg><span>Previous Papers</span></button></li>
+          <li><button class="nav-item" data-nav="labs"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v6l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3"/></svg><span>Laboratory Programs</span></button></li>
+          <li><button class="nav-item" data-nav="assignments"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5h6M9 9h6M5 2h14v20l-7-4-7 4V2z"/></svg><span>Assignments</span></button></li>
+          <li><button class="nav-item" data-nav="assistant"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 00-9 9v4a3 3 0 003 3h1v-7H6a6 6 0 0112 0h-1v7h1a3 3 0 003-3v-4a9 9 0 00-9-9z"/></svg><span>Study Assistant</span></button></li>
+          <li><button class="nav-item" data-nav="tests"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Practice Tests</span></button></li>
+          <li><button class="nav-item" data-nav="progress"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20h18M6 16V9M11 16V5M16 16v-9M21 16v-4"/></svg><span>My Progress</span></button></li>
+          <li><button class="nav-item" data-nav="announcements"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l6-7v16l-6-7v-2zM14 8a5 5 0 010 8M18 5a9 9 0 010 14"/></svg><span>Announcements</span></button></li>
+          <li class="faculty-only"><button class="nav-item" data-nav="faculty"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18v10H3zM3 7l9 6 9-6M7 11h.01M17 11h.01"/></svg><span>Faculty Console</span></button></li>
+        </ul>
+
+        <p class="nav-label faculty-only">Faculty workspace</p>
+        <ul class="nav-list faculty-only">
+          <li><button class="nav-item active" data-nav="faculty"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18v10H3zM3 7l9 6 9-6M7 11h.01M17 11h.01"/></svg><span>Faculty Console</span></button></li>
+          <li><button class="nav-item" data-nav="announcements"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l6-7v16l-6-7v-2zM14 8a5 5 0 010 8M18 5a9 9 0 010 14"/></svg><span>Announcements</span></button></li>
+        </ul>
+
+        <p class="nav-label">General</p>
+        <ul class="nav-list general-nav">
+          <li><button class="nav-item" data-nav="help"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 4M12 17h.01"/></svg><span>Help &amp; Support</span></button></li>
+          <li><button class="nav-item" data-nav="settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1l-.4-2.6H9.6l-.4 2.6a7 7 0 00-1.7 1l-2.4-1-2 3.4L3.1 11a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.4 2.6h4.8l.4-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1z"/></svg><span>Settings</span></button></li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card" id="userCard">
+          <span class="avatar" aria-hidden="true">EV</span>
+          <div class="user-meta">
+            <p class="user-name" id="userName">Account</p>
+            <p class="user-role" id="userRoleIndicator">Student</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+
+    <!-- ============ MAIN ============ -->
+    <div class="main" id="mainContent">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" id="menuToggle" aria-label="Open navigation" aria-expanded="false">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+          <div class="page-title">
+            <h1 id="pageTitle">Overview</h1>
+            <p id="pageBreadcrumb" class="breadcrumb">Home / Overview</p>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="search" role="search">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input type="search" id="globalSearch" placeholder="Search resources, subjects, tests…" aria-label="Global search" autocomplete="off" />
+            <span class="search-kbd" aria-hidden="true">⌘K</span>
+          </div>
+
+          <div class="semester-select" id="semesterSelectWrap">
+            <label for="semesterSelect" class="sr-only">Semester</label>
+            <select id="semesterSelect" aria-label="Select semester">
+              <option value="">All semesters</option>
+              <option value="sem1">Semester 1</option>
+              <option value="sem2">Semester 2</option>
+            </select>
+          </div>
+
+          <button class="icon-btn" id="notifBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+            <span class="notif-dot" id="notifDot" hidden></span>
+          </button>
+
+          <div class="profile" id="profileWrap">
+            <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+              <span class="avatar" aria-hidden="true">EV</span>
+              <span class="profile-name">Account</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="dropdown" id="profileDropdown" role="menu" hidden>
+              <div class="dropdown-head">
+                <span class="avatar lg" aria-hidden="true">EV</span>
+                <div>
+                  <p class="user-name">Account</p>
+                  <p class="user-email">Signed-in account</p>
+                </div>
+              </div>
+              <hr/>
+              <button class="dropdown-item" data-nav="settings" role="menuitem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1l-.4-2.6H9.6l-.4 2.6a7 7 0 00-1.7 1l-2.4-1-2 3.4L3.1 11a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.4 2.6h4.8l.4-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1z"/></svg> Settings</button>
+              <button class="dropdown-item" data-nav="help" role="menuitem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 4M12 17h.01"/></svg> Help &amp; Support</button>
+              <hr/>
+              <button class="dropdown-item" id="signOutBtn" role="menuitem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sign out</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Notification panel -->
+      <div class="notif-panel" id="notifPanel" hidden role="dialog" aria-label="Notifications">
+        <div class="notif-head">
+          <h3>Notifications</h3>
+          <button class="link-btn" id="markAllRead">Mark all read</button>
+        </div>
+        <ul class="notif-list" id="notifList"></ul>
+        <p class="notif-empty" id="notifEmpty" hidden>You're all caught up.</p>
+      </div>
+
+      <!-- ============ CONTENT ============ -->
+      <main class="content" id="content">
+
+        <!-- ===== OVERVIEW ===== -->
+        <section class="view active" id="view-overview" aria-labelledby="overviewHeading">
+          <div class="hero-banner">
+            <div class="hero-text">
+              <p class="hero-greet" id="heroGreet">Welcome</p>
+              <h2 id="overviewHeading" class="hero-title">Your academic world, organized.</h2>
+              <p class="hero-sub">A single workspace for notes, papers, labs, assignments and practice tests.</p>
+            </div>
+            <div class="hero-chips">
+              <span class="chip">Academic workspace</span>
+              <span class="chip">Year 1 · Semester 1</span>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card"><div class="stat-icon res"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/><path d="M13 3v5h5"/></svg></div><div><p class="stat-label">Study resources</p><p class="stat-value" id="overviewResourceCount">0</p><p class="stat-trend">Available in this catalogue</p></div></div>
+            <div class="stat-card"><div class="stat-icon asg"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5h6M9 9h6M5 2h14v20l-7-4-7 4V2z"/></svg></div><div><p class="stat-label">Upcoming assignments</p><p class="stat-value" id="overviewAssignmentCount">0</p><p class="stat-trend">Not completed</p></div></div>
+            <div class="stat-card"><div class="stat-icon tst"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><p class="stat-label">Practice tests completed</p><p class="stat-value" id="overviewTestCount">0</p><p class="stat-trend">Recorded on this device</p></div></div>
+            <div class="stat-card"><div class="stat-icon scr"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20h18M6 16V9M11 16V5M16 16v-9M21 16v-4"/></svg></div><div><p class="stat-label">Avg. practice score</p><p class="stat-value" id="overviewAverageScore">—</p><p class="stat-trend">Calculated from your tests</p></div></div>
+          </div>
+
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3>Continue learning</h3><button class="link-btn" data-nav="resources">View all</button></div>
+              <div class="continue-list" id="continueList"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Quick access</h3></div>
+              <div class="quick-grid" id="quickAccess"></div>
+            </div>
+          </div>
+
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3>Upcoming deadlines</h3><button class="link-btn" data-nav="assignments">View all</button></div>
+              <div id="deadlineList"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Recent announcements</h3><button class="link-btn" data-nav="announcements">View all</button></div>
+              <div id="recentAnnouncements"></div>
+            </div>
+          </div>
+
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3>Recommended for you</h3><span class="badge-soft">Selected resources</span></div>
+              <div id="recommendedList"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Recent activity</h3></div>
+              <div id="recentActivity"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== STUDY RESOURCES ===== -->
+        <section class="view" id="view-resources" aria-labelledby="resourcesHeading" hidden>
+          <div class="section-head">
+            <div>
+              <h2 id="resourcesHeading">Study Resources</h2>
+              <p class="muted">Browse notes, papers, labs and reference materials. Filter by branch, year, semester and subject.</p>
+            </div>
+            <div class="view-toggle" role="group" aria-label="Layout">
+              <button class="vt-btn active" data-layout="grid" aria-pressed="true" aria-label="Grid layout"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+              <button class="vt-btn" data-layout="list" aria-pressed="false" aria-label="List layout"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+            </div>
+          </div>
+
+          <div class="filters">
+            <div class="filter-row">
+              <label class="filter"><span class="sr-only">Branch</span><select id="fBranch"><option value="">All branches</option></select></label>
+              <label class="filter"><span class="sr-only">Year</span><select id="fYear"><option value="">All years</option></select></label>
+              <label class="filter"><span class="sr-only">Semester</span><select id="fSem"><option value="">All semesters</option></select></label>
+              <label class="filter"><span class="sr-only">Subject</span><select id="fSubject"><option value="">All subjects</option></select></label>
+              <label class="filter"><span class="sr-only">Category</span><select id="fCategory"><option value="">All categories</option></select></label>
+              <label class="filter search-inline"><span class="sr-only">Search</span><input type="search" id="fSearch" placeholder="Search resources…" /></label>
+              <button class="btn ghost" id="clearFilters">Clear</button>
+            </div>
+          </div>
+
+          <p class="result-count" id="resCount"></p>
+          <div class="resource-container" id="resourceContainer"></div>
+          <div class="empty-state" id="resEmpty" hidden>
+            <div class="empty-ill"><svg viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="10" y="14" width="44" height="36" rx="4"/><path d="M10 22h44M18 32h20M18 40h14"/></svg></div>
+            <h3>No resources found</h3>
+            <p>Try adjusting your filters or clearing the search.</p>
+            <button class="btn primary" id="resEmptyClear">Clear filters</button>
+          </div>
+        </section>
+
+        <!-- ===== PREVIOUS PAPERS ===== -->
+        <section class="view" id="view-papers" aria-labelledby="papersHeading" hidden>
+          <div class="section-head"><div><h2 id="papersHeading">Previous Question Papers</h2><p class="muted">Past examination papers organized by subject and year.</p></div></div>
+          <div class="resource-container" id="papersContainer"></div>
+        </section>
+
+        <!-- ===== LABS ===== -->
+        <section class="view" id="view-labs" aria-labelledby="labsHeading" hidden>
+          <div class="section-head"><div><h2 id="labsHeading">Laboratory Programs</h2><p class="muted">Lab exercises and programs for each subject.</p></div></div>
+          <div class="resource-container" id="labsContainer"></div>
+        </section>
+
+        <!-- ===== ASSIGNMENTS ===== -->
+        <section class="view" id="view-assignments" aria-labelledby="assignmentsHeading" hidden>
+          <div class="section-head">
+            <div><h2 id="assignmentsHeading">Assignments</h2><p class="muted">Track and manage assignment status on this device.</p></div>
+          </div>
+          <div class="filters">
+            <div class="filter-row">
+              <label class="filter"><span class="sr-only">Status</span><select id="asgFilter"><option value="">All statuses</option><option value="Pending">Pending</option><option value="Submitted">Submitted</option><option value="Completed">Completed</option></select></label>
+              <label class="filter search-inline"><span class="sr-only">Search</span><input type="search" id="asgSearch" placeholder="Search assignments…" /></label>
+            </div>
+          </div>
+          <div id="assignmentList" class="asg-list"></div>
+        </section>
+
+        <!-- ===== AI ASSISTANT ===== -->
+        <section class="view" id="view-assistant" aria-labelledby="assistantHeading" hidden>
+          <div class="assistant-wrap">
+            <div class="section-head"><div><h2 id="assistantHeading">Study Assistant</h2><p class="muted">Ask academic questions, summarise notes, or generate practice questions.</p></div></div>
+            <div class="assistant-card">
+              <div class="assistant-suggest" id="assistantSuggest">
+                <button class="suggest-chip" data-q="Explain the binary number system with an example.">Explain a syllabus topic</button>
+                <button class="suggest-chip" data-q="Summarise these study notes on data structures.">Summarise notes</button>
+                <button class="suggest-chip" data-q="Generate five practice questions on C programming.">Generate practice questions</button>
+                <button class="suggest-chip" data-q="Help me understand the previous question paper pattern for Mathematics.">Understand a question paper</button>
+                <button class="suggest-chip" data-q="Explain a C laboratory program step by step: swapping two numbers.">Explain a lab program</button>
+              </div>
+              <div class="chat-area" id="chatArea" aria-live="polite"></div>
+              <div class="chat-foot">
+                <button class="link-btn" id="clearChat">Clear chat</button>
+                <form class="chat-form" id="chatForm">
+                  <label for="chatInput" class="sr-only">Ask the assistant</label>
+                  <input type="text" id="chatInput" placeholder="Ask about your syllabus, notes, or a lab program…" autocomplete="off" />
+                  <button type="submit" class="btn primary" id="chatSend">Send</button>
+                </form>
+                <p class="local-note">Built-in responses are provided locally and are not generated by AI or verified against your syllabus.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== PRACTICE TESTS ===== -->
+        <section class="view" id="view-tests" aria-labelledby="testsHeading" hidden>
+          <div class="section-head"><div><h2 id="testsHeading">Practice Tests</h2><p class="muted">Take a mock test and get instant scoring with topic-wise feedback.</p></div></div>
+          <div id="testList" class="test-grid"></div>
+
+          <div class="quiz" id="quizPanel" hidden>
+            <div class="quiz-top">
+              <div class="quiz-meta">
+                <h3 id="quizTitle"></h3>
+                <p class="muted" id="quizSub"></p>
+              </div>
+              <div class="quiz-timer" id="quizTimer" aria-live="off">00:00</div>
+            </div>
+            <div class="quiz-progress"><span id="quizProgressBar"></span></div>
+            <div class="quiz-body" id="quizBody"></div>
+            <div class="quiz-foot">
+              <button class="btn ghost" id="quizPrev">Previous</button>
+              <span class="quiz-counter" id="quizCounter"></span>
+              <button class="btn ghost" id="quizNext">Next</button>
+              <button class="btn primary" id="quizSubmit">Submit test</button>
+              <button class="btn danger-ghost" id="quizCancel">Exit</button>
+            </div>
+          </div>
+
+          <div class="quiz-result" id="quizResult" hidden></div>
+        </section>
+
+        <!-- ===== PROGRESS ===== -->
+        <section class="view" id="view-progress" aria-labelledby="progressHeading" hidden>
+          <div class="section-head"><div><h2 id="progressHeading">My Progress</h2><p class="muted">Review practice activity and topic performance.</p></div></div>
+          <div class="stat-grid" id="progressStats"></div>
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3>Subject-wise performance</h3></div>
+              <div id="subjectPerf"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Score trend (last 5 tests)</h3></div>
+              <div class="chart-wrap"><svg id="scoreChart" viewBox="0 0 320 160" preserveAspectRatio="none" aria-label="Score trend chart"></svg></div>
+            </div>
+          </div>
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3>Topic strengths &amp; improvement areas</h3></div>
+              <div id="topicPerf"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Recommended study resources</h3></div>
+              <div id="progressRecs"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== ANNOUNCEMENTS ===== -->
+        <section class="view" id="view-announcements" aria-labelledby="annHeading" hidden>
+          <div class="section-head"><div><h2 id="annHeading">Announcements</h2><p class="muted">Faculty and department notices.</p></div></div>
+          <div class="tabs" role="tablist">
+            <button class="tab active" data-ann-filter="all" role="tab" aria-selected="true">All</button>
+            <button class="tab" data-ann-filter="unread" role="tab" aria-selected="false">Unread</button>
+            <button class="tab" data-ann-filter="important" role="tab" aria-selected="false">Important</button>
+          </div>
+          <div id="annList" class="ann-list"></div>
+        </section>
+
+        <!-- ===== FACULTY CONSOLE ===== -->
+        <section class="view" id="view-faculty" aria-labelledby="facultyHeading" hidden>
+          <div class="section-head"><div><h2 id="facultyHeading">Faculty Console</h2><p class="muted">Manage resources, assignments, and announcements.</p></div></div>
+          <div class="stat-grid">
+            <div class="stat-card"><div class="stat-icon res"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/></svg></div><div><p class="stat-label">Resources managed</p><p class="stat-value" id="fResCount">0</p></div></div>
+            <div class="stat-card"><div class="stat-icon asg"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5h6M5 2h14v20l-7-4-7 4V2z"/></svg></div><div><p class="stat-label">Assignments</p><p class="stat-value" id="fAsgCount">0</p></div></div>
+            <div class="stat-card"><div class="stat-icon tst"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l6-7v16l-6-7v-2zM14 8a5 5 0 010 8"/></svg></div><div><p class="stat-label">Announcements</p><p class="stat-value" id="fAnnCount">0</p></div></div>
+            <div class="stat-card"><div class="stat-icon scr"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z"/></svg></div><div><p class="stat-label">Subjects available</p><p class="stat-value" id="fSubjectCount">0</p></div></div>
+          </div>
+
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3>Add a resource</h3></div>
+              <form id="addResForm" class="form" novalidate>
+                <div class="form-row"><label>Title<input type="text" name="title" required /></label></div>
+                <div class="form-row"><label>Subject<select name="subject" id="addResSubject" required></select></label></div>
+                <div class="form-row"><label>Category<select name="category" required><option value="Notes">Notes</option><option value="Model Papers">Model Papers</option><option value="Reference Materials">Reference Materials</option><option value="Laboratory Programs">Laboratory Programs</option></select></label></div>
+                <div class="form-row"><label>Format<select name="format" required><option value="PDF">PDF</option><option value="DOCX">DOCX</option><option value="PPTX">PPTX</option></select></label></div>
+                <div class="form-row"><label>Attach a document or image<input type="file" name="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.html,.htm,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff,.webp" /><span class="muted">PDFs, images, and supported Office or text files are converted to PDF. Maximum 25 MB.</span></label></div>
+                <div class="form-actions"><button type="submit" class="btn primary">Add resource</button></div>
+              </form>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Post an announcement</h3></div>
+              <form id="addAnnForm" class="form" novalidate>
+                <div class="form-row"><label>Title<input type="text" name="title" required /></label></div>
+                <div class="form-row"><label>Priority<select name="priority" required><option value="Normal">Normal</option><option value="Important">Important</option></select></label></div>
+                <div class="form-row"><label>Description<textarea name="desc" rows="3" required></textarea></label></div>
+                <div class="form-actions"><button type="submit" class="btn primary">Post announcement</button></div>
+              </form>
+            </div>
+          </div>
+
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3>Create an assignment</h3></div>
+              <form id="addAssignmentForm" class="form" novalidate>
+                <div class="form-row"><label>Title<input type="text" name="title" required /></label></div>
+                <div class="form-row"><label>Subject<select name="subject" id="addAssignmentSubject" required></select></label></div>
+                <div class="form-row"><label>Due date<input type="date" name="due" required /></label></div>
+                <div class="form-row"><label>Priority<select name="priority" required><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></label></div>
+                <div class="form-row"><label>Instructions<textarea name="desc" rows="3" required></textarea></label></div>
+                <div class="form-actions"><button type="submit" class="btn primary">Publish assignment</button></div>
+              </form>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Assignments</h3></div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>Title</th><th>Subject</th><th>Due</th><th>Actions</th></tr></thead>
+                  <tbody id="facultyAssignmentBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Managed resources</h3><button class="link-btn" id="reloadFacultyRes">Refresh</button></div>
+            <div class="table-wrap">
+              <table class="data-table" id="facultyResTable">
+                <thead><tr><th>Title</th><th>Subject</th><th>Category</th><th>Format</th><th>Date</th><th>Attachment</th><th>Actions</th></tr></thead>
+                <tbody id="facultyResBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Managed announcements</h3></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Title</th><th>Priority</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody id="facultyAnnouncementBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== HELP ===== -->
+        <section class="view" id="view-help" aria-labelledby="helpHeading" hidden>
+          <div class="section-head"><div><h2 id="helpHeading">Help &amp; Support</h2><p class="muted">Common questions and guidance for using EduVault.</p></div></div>
+          <div class="faq" id="faqList"></div>
+          <div class="card">
+            <div class="card-head"><h3>Contact support</h3></div>
+            <form class="form" id="helpForm" novalidate>
+              <div class="form-row"><label>Subject<input type="text" name="subject" required /></label></div>
+              <div class="form-row"><label>Message<textarea name="message" rows="4" required></textarea></label></div>
+              <div class="form-actions"><button type="submit" class="btn primary">Save support request</button></div>
+              <p class="local-note">Support messages are not emailed. Your request is saved to your EduVault account. No email is sent.</p>
+            </form>
+          </div>
+        </section>
+
+        <!-- ===== SETTINGS ===== -->
+        <section class="view" id="view-settings" aria-labelledby="settingsHeading" hidden>
+          <div class="section-head"><div><h2 id="settingsHeading">Settings</h2><p class="muted">Preferences are saved securely to your EduVault account.</p></div></div>
+          <div class="card">
+            <div class="card-head"><h3>Preferences</h3></div>
+            <div class="setting-row"><div><p class="setting-title">Compact layout</p><p class="muted">Tighter spacing for denser screens.</p></div><label class="switch"><input type="checkbox" id="setCompact" /><span class="switch-track"></span></label></div>
+            <div class="setting-row"><div><p class="setting-title">Reduce motion</p><p class="muted">Minimise animations and transitions.</p></div><label class="switch"><input type="checkbox" id="setReducedMotion" /><span class="switch-track"></span></label></div>
+            <div class="setting-row"><div><p class="setting-title">Default view</p><p class="muted">Choose the default resource layout.</p></div><label class="filter"><select id="setDefaultView"><option value="grid">Grid</option><option value="list">List</option></select></label></div>
+            <div class="setting-row"><div><p class="setting-title">Clear saved data</p><p class="muted">Remove bookmarks, assignment statuses, practice history, support requests and preferences stored in your account.</p></div><button class="btn danger-ghost" id="clearData">Clear data</button></div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-head">
+        <h3 id="modalTitle"></h3>
+        <button class="icon-btn" id="modalClose" aria-label="Close dialog">&times;</button>
+      </header>
+      <div class="modal-body" id="modalBody"></div>
+      <footer class="modal-foot" id="modalFoot"></footer>
+    </section>
+  </div>
+
+  <!-- ============ TOAST ============ -->
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="SCRIPTS.JS"></script>
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(error=>console.warn("PWA service worker could not be registered",error)));}</script>
+</body>
+</html>
