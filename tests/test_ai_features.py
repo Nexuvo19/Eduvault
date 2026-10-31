@@ -109,6 +109,36 @@ class ResourceLinkTests(unittest.TestCase):
             [],
         )
 
+    def test_faculty_can_save_a_publisher_link(self):
+        app.app.config["TESTING"] = True
+        client = app.app.test_client()
+        with client.session_transaction() as session:
+            session["user_id"] = "test-user"
+            session["role"] = "faculty"
+        connection = MagicMock()
+        cursor = connection.cursor.return_value
+        cursor.fetchall.return_value = [("sub1", "sem1", "Computer Science", "1")]
+
+        with patch.object(app, "db_connect", return_value=connection):
+            response = client.put("/api/admin/resources", json=[{
+                "id": "resource-1",
+                "title": "Open textbook",
+                "subject": "sub1",
+                "category": "Reference Materials",
+                "format": "LINK",
+                "uploader": "OpenStax",
+                "externalUrl": "https://openstax.org/details/books/calculus-volume-1",
+            }])
+
+        self.assertEqual(response.status_code, 200)
+        insert = next(
+            call for call in cursor.execute.call_args_list
+            if "INSERT INTO resources" in call.args[0]
+        )
+        self.assertEqual(insert.args[1][7], "OpenStax")
+        self.assertEqual(insert.args[1][-1], "https://openstax.org/details/books/calculus-volume-1")
+        connection.commit.assert_called_once()
+
 
 class AIEndpointTests(unittest.TestCase):
     def setUp(self):
