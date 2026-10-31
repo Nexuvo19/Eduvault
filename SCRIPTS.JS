@@ -16,6 +16,12 @@
   const documentAccept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.html,.htm,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff,.webp";
   const documentPdfUrl=id=>"/api/documents/"+encodeURIComponent(id)+"/pdf";
   const documentOriginalUrl=id=>"/api/documents/"+encodeURIComponent(id)+"/original";
+  function safeExternalResourceUrl(value){
+    try{
+      const url=new URL(String(value||""));
+      return url.protocol==="https:"&&!url.username&&!url.password?url.href:"";
+    }catch(error){return "";}
+  }
   async function apiUploadDocument(file){
     const body=new FormData();body.append("file",file);
     let response;
@@ -126,7 +132,7 @@
 
   /* ---------------- Workspace Data ---------------- */
   let subjects = bootstrap.subjects;
-  const categories = ["Notes","Previous Papers","Model Papers","Laboratory Programs","Assignments","Reference Materials"];
+  const categories = ["Notes","Previous Papers","Model Papers","Laboratory Programs","Assignments","Reference Materials","External Courses"];
 
   let resources = Store.get("resources", []);
   let assignments = Store.get("assignments", []);
@@ -330,10 +336,12 @@
   function subjectName(id){return (subjects.find(s=>s.id===id)||{}).name||"—";}
 
   function resourceRowHtml(r){
-    return '<div class="res-top">'+(r.fileId&&r.fileContentType&&r.fileContentType.startsWith("image/")?'<img class="resource-preview-img" src="'+esc(documentOriginalUrl(r.fileId))+'" alt="Preview of '+esc(r.fileName||r.title)+'" />':'')+'<div class="res-icon fmt-'+r.format+'">'+esc(r.format)+'</div><div><p class="res-title">'+esc(r.title)+'</p><p class="res-sub">'+esc(subjectName(r.subject))+'</p></div></div>'+
+    const externalUrl=safeExternalResourceUrl(r.externalUrl);
+    return '<div class="res-top">'+(r.fileId&&r.fileContentType&&r.fileContentType.startsWith("image/")?'<img class="resource-preview-img" src="'+esc(documentOriginalUrl(r.fileId))+'" alt="Preview of '+esc(r.fileName||r.title)+'" />':'')+'<div class="res-icon fmt-'+esc(r.format)+'">'+esc(r.format)+'</div><div><p class="res-title">'+esc(r.title)+'</p><p class="res-sub">'+esc(subjectName(r.subject))+' · '+esc(r.uploader||"Academic Resources Team")+'</p></div></div>'+
       '<div class="res-meta"><span>'+esc(r.category)+'</span><span>Sem '+r.sem.replace("sem","")+'</span><span>'+esc(r.format)+'</span><span>'+fmtDate(r.date)+'</span></div>'+
-      '<div class="res-actions"><button class="icon-btn" data-view="'+r.id+'" aria-label="View"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-      '<button class="icon-btn" data-dl="'+esc(r.id)+'" aria-label="'+(r.fileId?"Download":"No file attached")+'" '+(r.fileId?"":"disabled")+'><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>'+
+      '<div class="res-actions"><button class="icon-btn" data-view="'+esc(r.id)+'" aria-label="View"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+      (r.fileId?'<button class="icon-btn" data-dl="'+esc(r.id)+'" aria-label="Download"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>':'')+
+      (externalUrl?'<a class="icon-btn" href="'+esc(externalUrl)+'" target="_blank" rel="noopener noreferrer" aria-label="Open source at '+esc(r.uploader||"publisher")+'"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3h7v7M10 14L21 3"/><path d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6"/></svg></a>':'')+
       '<button class="icon-btn bookmark-btn '+(state.bookmarks.includes(r.id)?"active":"")+'" data-bm="'+r.id+'" aria-label="Bookmark"><svg viewBox="0 0 24 24" width="18" height="18" fill="'+(state.bookmarks.includes(r.id)?"currentColor":"none")+'" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button></div>';
   }
 
@@ -516,15 +524,17 @@
   }));
 
   function openResourcePreview(r){
-    const filePreview=r.fileId
-      ?'<div class="resource-file-preview">'+(r.fileContentType&&r.fileContentType.startsWith("image/")?'<img class="resource-preview-large" src="'+esc(documentOriginalUrl(r.fileId))+'" alt="Preview of '+esc(r.fileName||r.title)+'" />':'')+'<p>Attached file: '+esc(r.fileName||"Document")+'</p><a class="btn ghost" href="'+esc(documentPdfUrl(r.fileId))+'">Open converted PDF</a></div>'
-      :'<div class="resource-file-preview">No course document is attached to this catalogue entry.</div>';
+    const externalUrl=safeExternalResourceUrl(r.externalUrl);
+    const previews=[];
+    if(r.fileId)previews.push('<div class="resource-file-preview">'+(r.fileContentType&&r.fileContentType.startsWith("image/")?'<img class="resource-preview-large" src="'+esc(documentOriginalUrl(r.fileId))+'" alt="Preview of '+esc(r.fileName||r.title)+'" />':'')+'<p>Attached file: '+esc(r.fileName||"Document")+'</p><a class="btn ghost" href="'+esc(documentPdfUrl(r.fileId))+'">Open converted PDF</a></div>');
+    if(externalUrl)previews.push('<div class="resource-file-preview"><p>Publisher: '+esc(r.uploader||"Original source")+'</p><a class="btn ghost" href="'+esc(externalUrl)+'" target="_blank" rel="noopener noreferrer">Open original source</a><p class="muted">The publisher’s access and reuse terms apply.</p></div>');
+    const filePreview=previews.length?previews.join(""):'<div class="resource-file-preview">No course document or source link is attached to this catalogue entry.</div>';
     modal("Resource details",
       '<div style="display:flex;flex-direction:column;gap:14px">'+
-      '<div style="display:flex;align-items:center;gap:12px"><span class="res-icon fmt-'+r.format+'" style="width:48px;height:48px">'+esc(r.format)+'</span><div><p style="font-size:16px;font-weight:600">'+esc(r.title)+'</p><p class="muted">'+esc(subjectName(r.subject))+'</p></div></div>'+
+      '<div style="display:flex;align-items:center;gap:12px"><span class="res-icon fmt-'+esc(r.format)+'" style="width:48px;height:48px">'+esc(r.format)+'</span><div><p style="font-size:16px;font-weight:600">'+esc(r.title)+'</p><p class="muted">'+esc(subjectName(r.subject))+'</p></div></div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:8px"><span class="res-meta" style="display:inline-block;font-size:12px;color:var(--ink-500);background:var(--gray-100);padding:4px 10px;border-radius:6px">'+esc(r.category)+'</span><span class="res-meta" style="display:inline-block;font-size:12px;color:var(--ink-500);background:var(--gray-100);padding:4px 10px;border-radius:6px">Semester '+r.sem.replace("sem","")+'</span><span class="res-meta" style="display:inline-block;font-size:12px;color:var(--ink-500);background:var(--gray-100);padding:4px 10px;border-radius:6px">'+esc(r.format)+'</span></div>'+
-      '<p class="muted">Academic Resources Team · '+fmtDate(r.date)+'</p>'+filePreview+'</div>',
-      '<button class="btn ghost" data-close>Close</button><button class="btn primary" data-dl-modal '+(r.fileId?"":"disabled")+'>'+(r.fileId?"Download PDF":"No file attached")+'</button>');
+      '<p class="muted">'+esc(r.uploader||"Academic Resources Team")+' · '+fmtDate(r.date)+'</p>'+filePreview+'</div>',
+      '<button class="btn ghost" data-close>Close</button>'+(r.fileId?'<button class="btn primary" data-dl-modal>Download PDF</button>':externalUrl?'<a class="btn primary" href="'+esc(externalUrl)+'" target="_blank" rel="noopener noreferrer">Open source</a>':'<button class="btn primary" disabled>No file or link</button>'));
     $("[data-close]",$("#modalFoot")).addEventListener("click",closeModal);
     if(r.fileId)$("[data-dl-modal]",$("#modalFoot")).addEventListener("click",()=>{closeModal();downloadResource(r);});
   }
@@ -967,7 +977,8 @@
     const body=$("#facultyResBody");body.innerHTML="";
     resources.forEach(r=>{
       const tr=el("tr");
-      tr.innerHTML='<td>'+esc(r.title)+'</td><td>'+esc(subjectName(r.subject))+'</td><td>'+esc(r.category)+'</td><td>'+esc(r.format)+'</td><td>'+fmtDate(r.date)+'</td><td>'+(r.fileId?'<a href="'+esc(documentPdfUrl(r.fileId))+'">PDF · '+esc(r.fileName||"Attached file")+'</a>':'—')+'</td><td><div class="table-actions"><button class="icon-btn" data-edit="'+esc(r.id)+'" aria-label="Edit '+esc(r.title)+'">Edit</button><button class="icon-btn" data-del="'+esc(r.id)+'" aria-label="Delete '+esc(r.title)+'">Delete</button></div></td>';
+      const externalUrl=safeExternalResourceUrl(r.externalUrl);
+      tr.innerHTML='<td>'+esc(r.title)+'</td><td>'+esc(subjectName(r.subject))+'</td><td>'+esc(r.category)+'</td><td>'+esc(r.format)+'</td><td>'+fmtDate(r.date)+'</td><td>'+(r.fileId?'<a href="'+esc(documentPdfUrl(r.fileId))+'">PDF · '+esc(r.fileName||"Attached file")+'</a>':'')+(externalUrl?'<a href="'+esc(externalUrl)+'" target="_blank" rel="noopener noreferrer"> · '+esc(r.uploader||"Source")+'</a>':'')+(!r.fileId&&!externalUrl?"—":"")+'</td><td><div class="table-actions"><button class="icon-btn" data-edit="'+esc(r.id)+'" aria-label="Edit '+esc(r.title)+'">Edit</button><button class="icon-btn" data-del="'+esc(r.id)+'" aria-label="Delete '+esc(r.title)+'">Delete</button></div></td>';
       body.appendChild(tr);
     });
     renderFacultySubjects();
@@ -1027,7 +1038,7 @@
       const subjectOptions=subjects.map(subject=>'<option value="'+esc(subject.id)+'" '+(subject.id===resource.subject?"selected":"")+'>'+esc(subject.name)+'</option>').join("");
       const categoryOptions=categories.map(category=>'<option '+(category===resource.category?"selected":"")+'>'+esc(category)+'</option>').join("");
       modal("Edit resource",
-        '<form id="editResourceForm" class="form"><div class="form-row"><label>Title<input name="title" value="'+esc(resource.title)+'" required /></label></div><div class="form-row"><label>Subject<select name="subject" required>'+subjectOptions+'</select></label></div><div class="form-row"><label>Category<select name="category" required>'+categoryOptions+'</select></label></div><div class="form-row"><label>Format<select name="format" required>'+["PDF","DOCX","PPTX","LAB","MD"].map(format=>'<option '+(format===resource.format?"selected":"")+'>'+format+'</option>').join("")+'</select></label></div><div class="form-row"><label>Replace attached file<input type="file" name="file" accept="'+documentAccept+'" /><span class="muted">Supported files are converted to PDF before saving.</span></label></div>'+(resource.fileId?'<div class="form-row"><a href="'+esc(documentPdfUrl(resource.fileId))+'">Current PDF: '+esc(resource.fileName||"Attached file")+'</a><label><input type="checkbox" name="removeFile" /> Remove current attachment</label></div>':'')+'</form>',
+        '<form id="editResourceForm" class="form"><div class="form-row"><label>Title<input name="title" value="'+esc(resource.title)+'" required /></label></div><div class="form-row"><label>Subject<select name="subject" required>'+subjectOptions+'</select></label></div><div class="form-row"><label>Category<select name="category" required>'+categoryOptions+'</select></label></div><div class="form-row"><label>Format<select name="format" required>'+["PDF","DOCX","PPTX","LAB","MD","LINK"].map(format=>'<option '+(format===resource.format?"selected":"")+'>'+format+'</option>').join("")+'</select></label></div><div class="form-row"><label>Publisher/source name<input name="uploader" maxlength="150" value="'+esc(resource.uploader||"")+'" /></label></div><div class="form-row"><label>Publisher HTTPS link<input type="url" name="externalUrl" maxlength="1000" value="'+esc(resource.externalUrl||"")+'" placeholder="https://…" /></label></div><div class="form-row"><label>Replace attached file<input type="file" name="file" accept="'+documentAccept+'" /><span class="muted">Supported files are converted to PDF before saving.</span></label></div>'+(resource.fileId?'<div class="form-row"><a href="'+esc(documentPdfUrl(resource.fileId))+'">Current PDF: '+esc(resource.fileName||"Attached file")+'</a><label><input type="checkbox" name="removeFile" /> Remove current attachment</label></div>':'')+'</form>',
         '<button class="btn ghost" data-close>Cancel</button><button class="btn primary" type="submit" form="editResourceForm">Save changes</button>');
       $("[data-close]",$("#modalFoot")).addEventListener("click",closeModal);
       $("#editResourceForm").addEventListener("submit",async event=>{
@@ -1036,6 +1047,8 @@
         const formData=new FormData(form);
         const title=String(formData.get("title")||"").trim();
         if(!title){toast("A resource title is required.","error");return;}
+        const externalUrl=String(formData.get("externalUrl")||"").trim();
+        if(externalUrl&&!safeExternalResourceUrl(externalUrl)){toast("Enter a valid HTTPS publisher link.","error");return;}
         const subjectId=String(formData.get("subject"));
         const subject=subjects.find(item=>item.id===subjectId);
         const selectedFile=formData.get("file");
@@ -1060,8 +1073,11 @@
           branch:subject?.branch||resource.branch,
           year:subject?.year||resource.year,
           category:String(formData.get("category")),
-          format:uploaded?"PDF":String(formData.get("format"))
+          uploader:String(formData.get("uploader")||"").trim()||"Academic Resources Team",
+          format:uploaded?"PDF":externalUrl?"LINK":String(formData.get("format"))
         });
+        if(externalUrl)resource.externalUrl=externalUrl;
+        else delete resource.externalUrl;
         if(uploaded){
           resource.fileId=uploaded.id;
           resource.fileName=uploaded.name;
@@ -1401,7 +1417,9 @@
     if(!title){toast("Title is required","error");return;}
     const file=fd.get("file");
     const hasFile=file instanceof File&&file.name!=="";
-    if(!hasFile){toast("Attach a course file before adding this resource.","error");return;}
+    const externalUrl=String(fd.get("externalUrl")||"").trim();
+    if(!hasFile&&!externalUrl){toast("Attach a file or enter a publisher HTTPS link.","error");return;}
+    if(externalUrl&&!safeExternalResourceUrl(externalUrl)){toast("Enter a valid HTTPS publisher link.","error");return;}
     const subject=subjects.find(item=>item.id===fd.get("subject"));
     const submitButton=form.querySelector('[type="submit"]');
     submitButton.disabled=true;
@@ -1414,12 +1432,13 @@
         subject:fd.get("subject"),
         sem:subject?.sem||"sem1",
         category:fd.get("category"),
-        format:uploaded?"PDF":fd.get("format"),
+        format:uploaded?"PDF":externalUrl?"LINK":fd.get("format"),
         date:new Date().toISOString().slice(0,10),
-        uploader:"Academic Resources Team",
+        uploader:String(fd.get("uploader")||"").trim()||"Academic Resources Team",
         branch:subject?.branch||"",
         year:subject?.year||""
       };
+      if(externalUrl)resource.externalUrl=externalUrl;
       if(uploaded){
         resource.fileId=uploaded.id;
         resource.fileName=uploaded.name;

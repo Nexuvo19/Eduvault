@@ -49,6 +49,97 @@ class AITestValidation(unittest.TestCase):
             )
 
 
+class ResourceLinkTests(unittest.TestCase):
+    def test_resource_links_require_https_and_a_host(self):
+        self.assertEqual(
+            app.validate_resource_url("https://openstax.org/details/books/calculus-volume-1"),
+            "https://openstax.org/details/books/calculus-volume-1",
+        )
+        self.assertIsNone(app.validate_resource_url(""))
+        for value in ("http://openstax.org", "javascript:alert(1)", "https://user@example.com"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                app.validate_resource_url(value)
+
+    def test_bootstrap_resource_includes_external_source_link(self):
+        cursor = MagicMock()
+        cursor.fetchall.return_value = [{
+            "id": "oer-calculus",
+            "title": "Open calculus",
+            "subject_id": "sub2",
+            "semester": "sem1",
+            "category": "Reference Materials",
+            "format": "LINK",
+            "resource_date": "2026-10-31",
+            "uploader": "OpenStax",
+            "branch": "Computer Science",
+            "study_year": "1",
+            "file_id": None,
+            "external_url": "https://openstax.org/details/books/calculus-volume-1",
+            "original_name": None,
+            "content_type": None,
+        }]
+
+        resources = app.fetch_resources(cursor)
+
+        self.assertEqual(resources[0]["externalUrl"], "https://openstax.org/details/books/calculus-volume-1")
+        self.assertEqual(resources[0]["uploader"], "OpenStax")
+
+    def test_faculty_cannot_save_unsafe_resource_link(self):
+        app.app.config["TESTING"] = True
+        client = app.app.test_client()
+        with client.session_transaction() as session:
+            session["user_id"] = "test-user"
+            session["role"] = "faculty"
+        connection = MagicMock()
+        cursor = connection.cursor.return_value
+        cursor.fetchall.return_value = [("sub1", "sem1", "Computer Science", "1")]
+
+        with patch.object(app, "db_connect", return_value=connection):
+            response = client.put("/api/admin/resources", json=[{
+                "id": "resource-1",
+                "title": "Unsafe link",
+                "subject": "sub1",
+                "externalUrl": "javascript:alert(1)",
+            }])
+
+        self.assertEqual(response.status_code, 400)
+        connection.rollback.assert_called_once()
+        self.assertEqual(
+            [call for call in cursor.execute.call_args_list if "INSERT INTO resources" in call.args[0]],
+            [],
+        )
+
+    def test_faculty_can_save_a_publisher_link(self):
+        app.app.config["TESTING"] = True
+        client = app.app.test_client()
+        with client.session_transaction() as session:
+            session["user_id"] = "test-user"
+            session["role"] = "faculty"
+        connection = MagicMock()
+        cursor = connection.cursor.return_value
+        cursor.fetchall.return_value = [("sub1", "sem1", "Computer Science", "1")]
+
+        with patch.object(app, "db_connect", return_value=connection):
+            response = client.put("/api/admin/resources", json=[{
+                "id": "resource-1",
+                "title": "Open textbook",
+                "subject": "sub1",
+                "category": "Reference Materials",
+                "format": "LINK",
+                "uploader": "OpenStax",
+                "externalUrl": "https://openstax.org/details/books/calculus-volume-1",
+            }])
+
+        self.assertEqual(response.status_code, 200)
+        insert = next(
+            call for call in cursor.execute.call_args_list
+            if "INSERT INTO resources" in call.args[0]
+        )
+        self.assertEqual(insert.args[1][7], "OpenStax")
+        self.assertEqual(insert.args[1][-1], "https://openstax.org/details/books/calculus-volume-1")
+        connection.commit.assert_called_once()
+
+
 class AIEndpointTests(unittest.TestCase):
     def setUp(self):
         app.app.config["TESTING"] = True

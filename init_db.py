@@ -43,6 +43,9 @@ def main():
             server.close()
         connection = mysql.connector.connect(**mysql_options(include_database=True))
         cursor = connection.cursor()
+        cursor.execute("SHOW TABLES LIKE 'resources'")
+        if cursor.fetchone():
+            ensure_resource_external_url_column(cursor)
         schema = (ROOT / "database" / "schema.sql").read_text(encoding="utf-8")
         statements = []
         for raw in schema.splitlines():
@@ -54,6 +57,7 @@ def main():
             if statement.strip():
                 cursor.execute(statement)
         ensure_document_storage_columns(cursor)
+        ensure_resource_external_url_column(cursor)
         connection.commit()
         cursor.close()
         connection.close()
@@ -76,6 +80,14 @@ def ensure_document_storage_columns(cursor):
         cursor.execute("ALTER TABLE documents ADD COLUMN original_data LONGBLOB NULL AFTER pdf_size")
     if "pdf_data" not in columns:
         cursor.execute("ALTER TABLE documents ADD COLUMN pdf_data LONGBLOB NULL AFTER original_data")
+
+
+def ensure_resource_external_url_column(cursor):
+    """Add publisher links to an existing resource catalogue."""
+    cursor.execute("SHOW COLUMNS FROM resources")
+    columns = {row[0] for row in cursor.fetchall()}
+    if "external_url" not in columns:
+        cursor.execute("ALTER TABLE resources ADD COLUMN external_url VARCHAR(1000) NULL AFTER file_id")
 
 
 def migrate_legacy_documents(common, database):
