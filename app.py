@@ -8,14 +8,14 @@ import secrets
 import shutil
 import subprocess
 import tempfile
-import uuid
+import uuid, io
 from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
 
 import mysql.connector
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, send_from_directory, session
+from flask import Flask, jsonify, request, send_file, send_from_directory, session
 from mysql.connector import Error as MySQLError
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
@@ -27,7 +27,7 @@ INSTANCE_DIR = ROOT / "instance"
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(INSTANCE_DIR / "uploads"))).expanduser()
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_REQUEST_BYTES = MAX_UPLOAD_BYTES + 1024 * 1024
-MAX_CONVERTED_BYTES = 40 * 1024 * 1024
+MAX_CONVERTED_BYTES, MAX_DOCUMENT_STORAGE_BYTES = 40 * 1024 * 1024, 48 * 1024 * 1024
 CONVERSION_TIMEOUT_SECONDS = 60
 ALLOWED_EXTENSIONS = {
     ".bmp", ".csv", ".doc", ".docx", ".gif", ".htm", ".html",
@@ -478,9 +478,7 @@ def create_document():
         return json_error("This file type is not supported for PDF conversion.", 415)
     INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
     identifier = uuid.uuid4().hex
-    document_dir = UPLOAD_DIR / identifier
     try:
-        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="eduvault-convert-", dir=INSTANCE_DIR) as work_dir:
             work_path = Path(work_dir)
             source = work_path / f"source{extension}"
@@ -490,20 +488,22 @@ def create_document():
             if source.stat().st_size > MAX_UPLOAD_BYTES:
                 return json_error("The upload exceeds the 25 MB file-size limit.", 413)
             converted = convert_to_pdf(source, extension, work_path)
-            document_dir.mkdir(parents=True, exist_ok=False)
-            original_path = document_dir / f"original{extension}"
-            pdf_path = document_dir / "document.pdf"
-            shutil.copyfile(source, original_path)
-            shutil.copyfile(converted, pdf_path)
+            original_data = source.read_bytes()
+            pdf_data = None if extension == ".pdf" else converted.read_bytes()
+        stored_size = len(original_data) + (len(pdf_data) if pdf_data else 0)
+        if stored_size > MAX_DOCUMENT_STORAGE_BYTES:
+            return json_error("The original and converted files exceed the database storage limit.", 413)
         content_type = mimetypes.guess_type(original_name)[0] or "application/octet-stream"
         connection = db_connect()
         try:
             cursor = connection.cursor()
             cursor.execute(
-                """INSERT INTO documents (id,original_name,extension,content_type,original_size,pdf_size,owner_id)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                """INSERT INTO documents
+                   (id,original_name,extension,content_type,original_size,pdf_size,original_data,pdf_data,owner_id)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (identifier, original_name, extension.lstrip(".").upper(), content_type,
-                 original_path.stat().st_size, pdf_path.stat().st_size, session["user_id"]),
+                 len(original_data), len(original_data) if pdf_data is None else len(pdf_data),
+                 original_data, pdf_data, session["user_id"]),
             )
             connection.commit()
             cursor.close()
@@ -511,23 +511,34 @@ def create_document():
             connection.close()
         return jsonify({
             "id": identifier, "name": original_name, "extension": extension.lstrip(".").upper(),
-            "contentType": content_type, "size": original_path.stat().st_size,
-            "pdfSize": pdf_path.stat().st_size, "createdAt": datetime.now().astimezone().isoformat(),
+            "contentType": content_type, "size": len(original_data),
+            "pdfSize": len(original_data) if pdf_data is None else len(pdf_data),
+            "createdAt": datetime.now().astimezone().isoformat(),
             "pdfUrl": f"/api/documents/{identifier}/pdf", "originalUrl": f"/api/documents/{identifier}/original",
         }), 201
     except (OSError, RuntimeError, ValueError, MySQLError) as error:
-        shutil.rmtree(document_dir, ignore_errors=True)
         app.logger.exception("Document upload or conversion failed.")
         return json_error(str(error) if isinstance(error, (RuntimeError, ValueError)) else "The file could not be saved.", 422)
 
 
-def find_document(identifier):
+def find_document(identifier, file_kind=None):
     if len(identifier) != 32 or any(char not in "0123456789abcdef" for char in identifier):
         return None
+    file_column = {
+        None: "",
+        "pdf": ", COALESCE(pdf_data, CASE WHEN extension='PDF' THEN original_data END) AS file_data",
+        "original": ", original_data AS file_data",
+    }.get(file_kind)
+    if file_column is None:
+        raise ValueError("Unsupported document file type.")
     connection = db_connect()
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM documents WHERE id=%s", (identifier,))
+        cursor.execute(
+            """SELECT id,original_name,extension,content_type,original_size,pdf_size
+               {file_column} FROM documents WHERE id=%s""".format(file_column=file_column),
+            (identifier,),
+        )
         result = cursor.fetchone()
         cursor.close()
         return result
@@ -539,28 +550,42 @@ def find_document(identifier):
 @login_required
 def get_document_pdf(identifier):
     try:
-        document = find_document(identifier)
+        document = find_document(identifier, "pdf")
     except MySQLError:
         return json_error("The database is unavailable.", 503)
     if document is None:
         return json_error("Document not found.", 404)
+    download_name = f"{Path(document['original_name']).stem}.pdf"
+    if document["file_data"] is not None:
+        return send_file(io.BytesIO(document["file_data"]), mimetype="application/pdf",
+                         as_attachment=True, download_name=download_name)
+    legacy_file = UPLOAD_DIR / identifier / "document.pdf"
+    if not legacy_file.is_file():
+        return json_error("The stored document file is unavailable.", 404)
     return send_from_directory(UPLOAD_DIR / identifier, "document.pdf", mimetype="application/pdf",
-                               as_attachment=True, download_name=f"{Path(document['original_name']).stem}.pdf")
+                               as_attachment=True, download_name=download_name)
 
 
 @app.get("/api/documents/<identifier>/original")
 @login_required
 def get_document_original(identifier):
     try:
-        document = find_document(identifier)
+        document = find_document(identifier, "original")
     except MySQLError:
         return json_error("The database is unavailable.", 503)
     if document is None:
         return json_error("Document not found.", 404)
     extension = Path(document["original_name"]).suffix.lower()
+    as_attachment = not document["content_type"].startswith("image/")
+    if document["file_data"] is not None:
+        return send_file(io.BytesIO(document["file_data"]), mimetype=document["content_type"],
+                         as_attachment=as_attachment, download_name=document["original_name"])
+    legacy_file = UPLOAD_DIR / identifier / f"original{extension}"
+    if not legacy_file.is_file():
+        return json_error("The stored document file is unavailable.", 404)
     return send_from_directory(UPLOAD_DIR / identifier, f"original{extension}",
                                mimetype=document["content_type"],
-                               as_attachment=not document["content_type"].startswith("image/"),
+                               as_attachment=as_attachment,
                                download_name=document["original_name"])
 
 
