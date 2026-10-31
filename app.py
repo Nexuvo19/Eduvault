@@ -19,6 +19,7 @@ from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 import mysql.connector
@@ -285,11 +286,33 @@ def as_iso(value):
     return value.isoformat() if isinstance(value, (date, datetime)) else value
 
 
+def validate_resource_url(value):
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str):
+        raise ValueError("A resource source link must be a URL.")
+    value = value.strip()
+    if not value:
+        return None
+    if len(value) > 1000 or any(character.isspace() or ord(character) < 32 for character in value):
+        raise ValueError("A resource source link must be a valid HTTPS URL under 1000 characters.")
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        parsed.port
+    except ValueError as error:
+        raise ValueError("A resource source link must be a valid HTTPS URL.") from error
+    if (parsed.scheme != "https" or not hostname
+            or parsed.username is not None or parsed.password is not None):
+        raise ValueError("A resource source link must use HTTPS and include a valid host.")
+    return value
+
+
 def fetch_resources(cursor):
     cursor.execute(
         """SELECT r.id, r.title, r.subject_id, r.semester, r.category, r.format,
                   r.resource_date, r.uploader, r.branch, r.study_year,
-                  r.file_id, d.original_name, d.content_type
+                  r.file_id, r.external_url, d.original_name, d.content_type
            FROM resources r LEFT JOIN documents d ON d.id=r.file_id
            ORDER BY r.resource_date DESC, r.id"""
     )
@@ -300,6 +323,7 @@ def fetch_resources(cursor):
             "sem": row["semester"], "category": row["category"], "format": row["format"],
             "date": as_iso(row["resource_date"]), "uploader": row["uploader"],
             "branch": row["branch"], "year": row["study_year"],
+            **({"externalUrl": row["external_url"]} if row["external_url"] else {}),
             **({"fileId": row["file_id"], "fileName": row["original_name"],
                 "fileContentType": row["content_type"]} if row["file_id"] else {}),
         })
@@ -633,18 +657,27 @@ def replace_collection(collection):
                 subject_id = str(item.get("subject", ""))
                 if subject_id not in subject_metadata:
                     raise ValueError("Each resource must use an existing subject.")
+                title = str(item["title"]).strip()
+                uploader = str(item.get("uploader", "Academic Resources Team")).strip() or "Academic Resources Team"
+                if len(title) > 255 or len(uploader) > 150:
+                    raise ValueError("A resource title or source name exceeds the maximum length.")
+                external_url = validate_resource_url(item.get("externalUrl"))
                 item_id = str(item.get("id", "")).strip() or uuid.uuid4().hex
+                if len(item_id) > 64:
+                    raise ValueError("A resource ID exceeds the maximum length.")
+                if item_id in identifiers:
+                    raise ValueError("Resource IDs must be unique.")
                 identifiers.append(item_id)
                 cursor.execute(
-                    """INSERT INTO resources (id,title,subject_id,semester,category,format,resource_date,uploader,branch,study_year,file_id)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    """INSERT INTO resources (id,title,subject_id,semester,category,format,resource_date,uploader,branch,study_year,file_id,external_url)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                        ON DUPLICATE KEY UPDATE title=VALUES(title),subject_id=VALUES(subject_id),semester=VALUES(semester),
                        category=VALUES(category),format=VALUES(format),resource_date=VALUES(resource_date),uploader=VALUES(uploader),
-                       branch=VALUES(branch),study_year=VALUES(study_year),file_id=VALUES(file_id)""",
-                    (item_id, str(item["title"]).strip(), subject_id, subject_metadata[subject_id]["sem"],
+                       branch=VALUES(branch),study_year=VALUES(study_year),file_id=VALUES(file_id),external_url=VALUES(external_url)""",
+                    (item_id, title, subject_id, subject_metadata[subject_id]["sem"],
                      item.get("category", "Notes"), item.get("format", "PDF"), item.get("date") or date.today(),
-                     item.get("uploader", "Academic Resources Team"), subject_metadata[subject_id]["branch"],
-                     subject_metadata[subject_id]["year"], item.get("fileId")),
+                     uploader, subject_metadata[subject_id]["branch"],
+                     subject_metadata[subject_id]["year"], item.get("fileId"), external_url),
                 )
             if identifiers:
                 placeholders = ",".join(["%s"] * len(identifiers))
