@@ -2,13 +2,13 @@
 
 EduVault is an installable Progressive Web App (PWA). A public deployment gives everyone one HTTPS link; Android users can install it from Chrome, and desktop users can install it from a supported browser. It is not an APK yet and does not require a Play Store listing for people to install it from your link.
 
-The project uses Flask for its backend and MySQL for persistent account, academic, workspace, and uploaded-file data. The deployment files are configured for **Render (web app) + Aiven for MySQL (database)**. These providers have free entry options suitable for a class/demo project, but free services have availability, storage, and usage limitations. Check provider terms before using this for real college-wide data.
+The project uses Flask for its backend and MySQL for persistent account and academic data. The deployment files are configured for **Render (web app) + Aiven for MySQL (database)**. These providers have free entry options suitable for a class/demo project, but free services have availability, storage, and usage limitations. Check provider terms before using this for real college-wide data.
 
 ## What the app includes
 
 - Password-hashed student/faculty authentication and student self-registration.
 - Faculty accounts created only by an administrator.
-- Shared resources, assignments and announcements stored in MySQL.
+- The subject catalogue, shared resources, practice tests, assignments and announcements are stored in MySQL and managed from the faculty console.
 - Per-user bookmarks, assignment status, read state, practice history, chat, support requests and preferences stored in MySQL.
 - Faculty document uploads converted to PDF by LibreOffice, with original and PDF bytes stored in MySQL.
 - PWA manifest, install icons and service worker. The app shell can be cached; database/API actions still need internet access.
@@ -59,7 +59,7 @@ Do this from your laptop before deploying. This makes the schema and demo record
    python create_faculty.py
    ```
 
-   `init_db.py` creates the project tables, adds missing document-storage columns to existing databases, and inserts the supplied demo records. `create_faculty.py` asks for the faculty ID, name and password. Students can register from the app.
+   `init_db.py` creates the project tables and inserts the supplied demo catalogue and records. Demo resource rows are catalogue entries only; faculty must attach actual course files in the Faculty Console. Resource files uploaded by faculty are stored in MySQL and remain available after redeploys. `create_faculty.py` asks for the faculty ID, name and password. Students can register from the app.
 
 ### 3. Put the project on GitHub
 
@@ -132,7 +132,7 @@ Run `python create_faculty.py` from a computer whose `.env` points to the hosted
 
 - `app.py` — Flask routes, authentication, MySQL APIs and uploads
 - `database/schema.sql` — MySQL tables and demo records
-- `init_db.py` — creates/applies the schema and adds missing upload columns
+- `init_db.py` — creates/applies the schema
 - `create_faculty.py` — secure faculty-account creation utility
 - `index.html`, `landing.css`, `landing.js` — sign-in and registration
 - `dashboard.html`, `STYLE.CSS`, `TYPOGRAPHY.CSS`, `SCRIPTS.JS` — academic workspace
@@ -150,4 +150,4 @@ Run `python create_faculty.py` from a computer whose `.env` points to the hosted
 - [Aiven: MySQL free tier](https://aiven.io/docs/products/mysql/concepts/mysql-free-tier)
 - [Aiven: connect to MySQL from Python](https://aiven.io/docs/products/mysql/howto/connect-with-python)
 
-**Important:** The current hosted instance is available at [eduvault-app-r9b3.onrender.com](https://eduvault-app-r9b3.onrender.com). Keep `.env`, `ca.pem`, passwords, and private uploaded documents out of GitHub.
+**Important:** This package is deployment-configured, not yet live on the internet. A public URL is created only after you connect your GitHub repository to Render and add your own Aiven database credentials and CA certificate. Never send your database password or `.env` file to anyone.

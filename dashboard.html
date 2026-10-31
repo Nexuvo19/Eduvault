@@ -369,13 +369,60 @@
 
           <div class="grid-two">
             <div class="card">
+              <div class="card-head"><h3 id="subjectFormHeading">Add a subject</h3></div>
+              <form id="subjectForm" class="form" novalidate>
+                <div class="form-row"><label>Subject name<input type="text" name="name" maxlength="150" required /></label></div>
+                <div class="form-row"><label>Course code<input type="text" name="code" maxlength="40" required /></label></div>
+                <div class="form-row"><label>Branch<input type="text" name="branch" maxlength="100" required /></label></div>
+                <div class="form-row"><label>Semester<input type="text" name="sem" maxlength="20" placeholder="sem1" required /></label></div>
+                <div class="form-row"><label>Study year<input type="text" name="year" maxlength="10" placeholder="1" required /></label></div>
+                <div class="form-actions"><button type="submit" class="btn primary" id="saveSubjectBtn">Add subject</button><button type="button" class="btn ghost" id="cancelSubjectEdit" hidden>Cancel</button></div>
+              </form>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Managed subjects</h3></div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>Subject</th><th>Code</th><th>Branch</th><th>Semester</th><th>Actions</th></tr></thead>
+                  <tbody id="facultySubjectBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-head"><h3 id="testFormHeading">Add a practice test</h3></div>
+              <form id="testForm" class="form" novalidate>
+                <div class="form-row"><label>Title<input type="text" name="title" maxlength="255" required /></label></div>
+                <div class="form-row"><label>Subject<select name="subject" id="testSubject" required></select></label></div>
+                <div class="form-row"><label>Topic<input type="text" name="topic" maxlength="150" required /></label></div>
+                <div class="form-row"><label>Duration (minutes)<input type="number" name="durationMinutes" min="1" max="120" value="5" required /></label></div>
+                <div class="form-row"><label>Difficulty<select name="difficulty" required><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></label></div>
+                <div class="form-row"><label>Questions (JSON)<textarea name="questions" rows="8" placeholder='[{&quot;q&quot;:&quot;Question text&quot;,&quot;opts&quot;:[&quot;Option A&quot;,&quot;Option B&quot;],&quot;ans&quot;:0,&quot;topic&quot;:&quot;Topic&quot;}]' required></textarea><span class="muted">Each question needs q, opts (2–10 options), ans (zero-based correct option), and topic.</span></label></div>
+                <div class="form-actions"><button type="submit" class="btn primary" id="saveTestBtn">Add test</button><button type="button" class="btn ghost" id="cancelTestEdit" hidden>Cancel</button></div>
+              </form>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Managed practice tests</h3></div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>Title</th><th>Subject</th><th>Questions</th><th>Actions</th></tr></thead>
+                  <tbody id="facultyTestBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-two">
+            <div class="card">
               <div class="card-head"><h3>Add a resource</h3></div>
               <form id="addResForm" class="form" novalidate>
                 <div class="form-row"><label>Title<input type="text" name="title" required /></label></div>
                 <div class="form-row"><label>Subject<select name="subject" id="addResSubject" required></select></label></div>
                 <div class="form-row"><label>Category<select name="category" required><option value="Notes">Notes</option><option value="Model Papers">Model Papers</option><option value="Reference Materials">Reference Materials</option><option value="Laboratory Programs">Laboratory Programs</option></select></label></div>
                 <div class="form-row"><label>Format<select name="format" required><option value="PDF">PDF</option><option value="DOCX">DOCX</option><option value="PPTX">PPTX</option></select></label></div>
-                <div class="form-row"><label>Attach a document or image<input type="file" name="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.html,.htm,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff,.webp" /><span class="muted">PDFs, images, and supported Office or text files are converted to PDF. Maximum 25 MB.</span></label></div>
+                <div class="form-row"><label>Attach a document or image<input type="file" name="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.html,.htm,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff,.webp" required /><span class="muted">Required. PDFs, images, and supported Office or text files are converted to PDF. Maximum 25 MB.</span></label></div>
                 <div class="form-actions"><button type="submit" class="btn primary">Add resource</button></div>
               </form>
             </div>
